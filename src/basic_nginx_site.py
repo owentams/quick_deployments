@@ -1,7 +1,7 @@
 """A quick deployment for a basic NginX web page, with webroot provided."""
 import os
 import tarfile
-from shutil import copy
+from shutil import copy, copytree
 from textwrap import dedent
 from docker.types import Mount, Network
 from _io import TextIOWrapper
@@ -70,12 +70,8 @@ class BasicNginXSite():
             parent_dir,
             "configuration"
         )
-        check_isdir(webroot_path)
-        check_isdir(confdir_path)
-        if not os.listdir(webroot_path):
-            copy(Config.default_nginx_webroot, webroot_path)
-        if not os.listdir(confdir_path):
-            copy(Config.default_nginx_config, confdir_path)
+        check_isdir(webroot_path, src=Config.default_nginx_webroot)
+        check_isdir(confdir_path, src=Config.default_nginx_config)
         webroot = Mount(
             target="/usr/share/nginx/html",
             source=webroot_path,
