@@ -1,11 +1,14 @@
 """Tests for the BasicNginXSite."""
 import os
-from src.config import Config
 from docker.models.networks import Network
-from src.basic_nginx_site import BasicNginXSite
+from docker.errors import APIError
 from textwrap import dedent
 from hashlib import sha256
-from stat import S_IRUSR, S_IWUSR, S_IRGRP, S_IROTH
+from requests import get, ConnectionError
+from pytest import raises, fixture
+from src.config import Config
+from src.basic_nginx_site import BasicNginXSite
+
 
 class TestBasicNginXSite():
     """Tests that apply to all of the variations on BasicNginXSite."""
@@ -200,3 +203,17 @@ class TestBlankMounted(TestBasicNginXSite):
         assert os.stat(os.path.join(webroot_dir, "index.html")).st_mode \
             == 0o100644, \
             "index.html permissions are wrong."
+
+    def test_get_request(self):
+        """Start the container and check the results of an HTTP request.
+
+        Performs requests on 80 and 443.
+        """
+        self.get_test_instance().container.start()
+        http_result = get("http://localhost")
+        assert http_result.status_code == 200
+        assert sha256(http_result.content.encode('ascii')) == \
+            "38ffd4972ae513a0c79a8be4573403edcd709f0f572105362b08ff50cf6de521"
+        with raises(ConnectionError):
+            # No cert, no HTTPS. Throws an error.
+            get("https://localhost")
