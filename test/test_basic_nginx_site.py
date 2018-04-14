@@ -32,7 +32,9 @@ class TestBasicNginXSite():
             return networks[0]
         else:
             # A network for this name doesn't yet exist
-            return Config.client.networks.create(name="%s_network" % name)
+            return Config.client.networks.create(
+                name="%s_network" % self.instance_name
+            )
 
     def get_test_instance(self) -> BasicNginXSite:
         """Aquire a BasicNginXSite based on the name and other args passed."""
@@ -46,6 +48,19 @@ class TestBasicNginXSite():
                 443:    443
             }
         )
+
+    def teardown_method(self):
+        """Remove the test container.
+
+        Because the BasicNginXSite has auto_remove set to true, it just needs
+        stopped.
+        """
+        try:
+            self.get_test_instance().container.stop()
+        except APIError:
+            # if the container isn't running it will throw an error for
+            # attempting to stop it.
+            self.get_test_instance().container.remove()
 
     @staticmethod
     def inspect(container_id: int) -> dict:
