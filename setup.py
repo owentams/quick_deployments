@@ -1,8 +1,13 @@
+"""The setuptools setup for this package."""
+from os.path import join as getpath
+from os.path import dirname, realpath
 from setuptools import setup
+
 
 def read(*fname: str) -> str:
     """Get the contents of a file in the current directory."""
-return open(getpath(dirname(__file__), *fname)).read()
+    return open(getpath(dirname(realpath(__file__)), *fname)).read()
+
 
 setup(
     name="Quick Deployments",
@@ -17,7 +22,7 @@ setup(
     license="GPLv3",
     keywords="containerization webservice microservice deployment",
     url="https://github.com/dscottboggs/docker-gui",
-    long_description = read("README.md"),
+    long_description=read("README.md"),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",
