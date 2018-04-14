@@ -85,6 +85,10 @@ class BasicNginXSite():
         )
         check_isdir(webroot_path)
         check_isdir(confdir_path)
+        if len(os.listdir(webroot_path)) == 0:
+            copy(Config.default_nginx_webroot, webroot_path)
+        if len(os.listdir(confdir_path)) == 0:
+            copy(Config.default_nginx_config, confdir_path)
         webroot = Mount(
             target="/usr/share/nginx/html",
             source=webroot_path,

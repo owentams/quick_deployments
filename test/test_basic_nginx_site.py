@@ -8,6 +8,7 @@ from requests import get, ConnectionError
 from pytest import raises, fixture
 from src.config import Config
 from src.basic_nginx_site import BasicNginXSite
+from shutil import rmtree
 
 
 class TestBasicNginXSite():
@@ -218,6 +219,17 @@ class TestBlankMounted(TestBasicNginXSite):
         assert os.stat(os.path.join(webroot_dir, "index.html")).st_mode \
             == 0o100644, \
             "index.html permissions are wrong."
+
+    def test_that_files_are_placed_if_not_present(self):
+        """Deletes the webroot & confdir then checks for the files to be back.
+
+        They should be checked for and repopulated every time
+        get_test_instance is called.
+        """
+        for mount in self.get_test_instance().mounts:
+            rmtree(mount['Source'])
+        self.test_webroot_files()
+        self.test_configuration_files()
 
     def test_get_request(self):
         """Start the container and check the results of an HTTP request.
