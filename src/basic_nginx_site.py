@@ -41,7 +41,13 @@ class BasicNginXSite():
                         all=True, filters={'name': kwargs['name']}
                     ):
                 cont.remove(v=False)
-        self.mounts = kwargs['mounts']
+        try:
+            self.mounts = kwargs['mounts']
+        except KeyError:
+            print(
+                "WARNING: No Mounts specified for this container. There will",
+                "be no persistence of the content of this container."
+            )
         self.container = Config.client.containers.create(*args, **kwargs)
         self.state = Config.client.api.inspect_container(self.container.id)
 
@@ -221,7 +227,7 @@ class BasicNginXSite():
         # A network for this name exists, get it.
         networks = [
             net.id for net in Config.client.networks.list(
-                name="%s_network" % name
+                names=["%s_network" % name]
             )
         ]
         assert len(networks) == 1, dedent("""

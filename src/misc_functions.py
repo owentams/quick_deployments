@@ -27,12 +27,12 @@ def perms(*filepath: Tuple[str, ...]) -> int:
 
     :type filepath: tuple of strings to be passed to os.path.join
     """
-    return stat(getpath(filepath)).st_mode
+    return stat(getpath(*filepath)).st_mode
 
 
 def hash_of_file(*filepath: str) -> str:
     """Get the sha256 hash of a file read by read_absolute."""
-    return hash_of_str(read_absolute(filepath))
+    return hash_of_str(read_absolute(*filepath))
 
 
 def read_relative(*fname: str) -> str:
@@ -51,7 +51,7 @@ def read_absolute(*fname: str) -> str:
     Path should be passed like with os.path.join:
     read_absolute(os.sep, 'path', 'to', 'file')
     """
-    with open(getpath(fname)) as file:
+    with open(getpath(*fname)) as file:
         return file.read()
 
 
