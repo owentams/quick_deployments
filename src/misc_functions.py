@@ -5,7 +5,8 @@ All code in this file should be purely functional.
 
 from subprocess import run, PIPE
 from subprocess import CompletedProcess
-from os.path import isdir
+from os.path import isdir, dirname, realpath
+from os.path import join as getpath
 from os import access, listdir, removedirs
 from os import F_OK as file_exists
 from os import makedirs as mkdir
@@ -15,12 +16,32 @@ from src.config import Config
 help(copytree)
 
 
+def read_relative(*fname: str) -> str:
+    """Get the contents of a file in the current directory.
+
+    Path should be passed like with os.path.join:
+    read_relative('path', 'to', 'file')
+    """
+    with open(getpath(dirname(realpath(__file__)), *fname)) as file:
+        return file.read()
+
+
+def read_absolute(*fname: str) -> str:
+    """Get the contents of a file from an absolute path.
+
+    Path should be passed like with os.path.join:
+    read_absolute(os.sep, 'path', 'to', 'file')
+    """
+    with open(getpath(fname)) as file:
+        return file.read()
+
+
 def runcmd(cmd: str) -> CompletedProcess:
     """Alias subprocess.run, with check, shell, stdin and stdout enabled."""
     return run(cmd, check=True, shell=True, stdout=PIPE, stdin=PIPE)
 
 
-def check_isdir(filepath: str, src: str='') -> bool:
+def check_isdir(filepath: str, src: str = '') -> bool:
     """Check to make sure a particular filepath is a directory.
 
     Also check that it's not a file and create it if it doesn't already
