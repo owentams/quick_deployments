@@ -226,11 +226,7 @@ class BasicNginXSite():
             # A network for this name doesn't yet exist
             return Config.client.networks.create(name="%s_network" % name)
         # A network for this name exists, get it.
-        networks = [
-            net.id for net in Config.client.networks.list(
-                names=["%s_network" % name]
-            )
-        ]
+        networks = Config.client.networks.list(names=["%s_network" % name])
         assert len(networks) == 1, dedent("""
             Apparently it's possible to have more than one network with the
             same name. I did not know that."""
