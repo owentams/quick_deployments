@@ -1,5 +1,6 @@
 """A quick deployment for a basic NginX web page, with webroot provided."""
 import os
+from os import sep as root
 import tarfile
 from shutil import copy
 from textwrap import dedent
@@ -62,7 +63,7 @@ class BasicNginXSite():
         """
         network = cls.get_network(name)
         parent_dir = os.path.join(
-            os.sep,
+            root,
             "usr",
             "share",
             "quick_deployments",
@@ -124,10 +125,11 @@ class BasicNginXSite():
 
         The files should be either strings or file-like objects, or a mixture.
         """
-
+        network = self.get_network(name)
+        parent_dir = self.get_parent_dir(name)
         webroot_files = tarfile.open(
             os.path.join(
-                os.sep,
+                root,
                 "tmp",
                 "%s_webroot.tar" % name
             ),
@@ -164,22 +166,9 @@ class BasicNginXSite():
         /usr/share/quick_deployments/static/{name}/configuration
         """
         network = cls.get_network(name)
-        parent_dir = os.path.join(
-            os.sep,
-            "usr",
-            "share",
-            "quick_deployments",
-            "static",
-            name
-        )
-        webroot_path = os.path.join(
-            parent_dir,
-            "webroot"
-        )
-        confdir_path = os.path.join(
-            parent_dir,
-            "configuration"
-        )
+        parent_dir = cls.get_parent_dir(name)
+        webroot_path = os.path.join(parent_dir, "webroot")
+        confdir_path = os.path.join(parent_dir, "configuration")
         check_isdir(webroot_path)
         check_isdir(confdir_path)
         webroot = Mount(
@@ -215,6 +204,18 @@ class BasicNginXSite():
             )
         obj.mounts = (confdir, webroot)
         return obj
+
+    @staticmethod
+    def get_parent_dir(name: str) -> str:
+        """Retrieve the parent directory of a named instance."""
+        return os.path.join(
+            root,
+            "usr",
+            "share",
+            "quick_deployments",
+            "static",
+            name
+        )
 
     @staticmethod
     def get_network(name: str) -> Network:
