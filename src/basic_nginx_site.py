@@ -96,7 +96,7 @@ class BasicNginXSite():
         obj = cls(
             image="nginx:latest",
             auto_remove=True,
-            network=network.name,
+            network=network.id,
             ports={
                 80:     80,
                 443:    443
@@ -198,7 +198,7 @@ class BasicNginXSite():
         obj = cls(
             image="nginx:latest",
             auto_remove=True,
-            network=network.name,
+            network=network.id,
             ports={
                 80:     80,
                 443:    443
