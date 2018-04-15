@@ -223,7 +223,7 @@ class MountedNginXSite_Mixin(TestBasicNginXSite):
         )
 
     def test_that_files_are_placed_if_not_present(self):
-        """Deletes the webroot & confdir then checks for the files to be back.
+        """Delete the webroot & confdir then check for the files to be back.
 
         They should be checked for and repopulated every time
         get_test_instance is called.
@@ -247,6 +247,7 @@ class TestCopyFilesToMountedWebroot(MountedNginXSite_Mixin):
 
     @property
     def instance(self) -> BasicNginXSite:
+        """The intance of the object to work with."""
         return BasicNginXSite.copy_files_to_mounted_webroot(
             "test-copy_files_to_mounted_webroot-nginx",
             self.index_path,
@@ -254,6 +255,7 @@ class TestCopyFilesToMountedWebroot(MountedNginXSite_Mixin):
         )
 
     def teardown_method(self):
+        """Delete files created during test."""
         try:
             rmtree(os.path.join(root, 'tmp', 'test-webroot'))
         except FileNotFoundError:
@@ -266,7 +268,8 @@ class DockerVolumeNginXSite_Mixin(TestBasicNginXSite):
         """Assure that the files in the webroot are correct.
 
         These are the index and errpage files passed in the get_test_instance
-        method. """
+        method.
+        """
         parentdir = os.path.join(root, 'usr', 'share', 'nginx', 'html')
         tarchive, _ = self.instance.container.get_archive(
             os.path.join(parentdir, 'index.html')
@@ -289,3 +292,20 @@ class DockerVolumeNginXSite_Mixin(TestBasicNginXSite):
         assert hash_of_file(
             output_test_dir, '50x.html'
         ) == hash_of_file(self.errpage_path)
+
+
+class Test_SpecifiedFilesCopiedToVolume(DockerVolumeNginXSite_Mixin):
+    """Tests for the specified_files_copied_to_volume classmethod."""
+    @property
+    def instance_name(self) -> str:
+        """The name used by the container and other attributes."""
+        return "test_specified_files_copied_to_volume"
+
+    @property
+    def instance(self) -> BasicNginXSite:
+        """The intance of the object to work with."""
+        return BasicNginXSite.specified_files_copied_to_volume(
+            self.instance_name,
+            self.index_path,
+            self.errpage_path
+        )
