@@ -7,13 +7,32 @@ from subprocess import run, PIPE
 from subprocess import CompletedProcess
 from os.path import isdir, dirname, realpath
 from os.path import join as getpath
-from os import access, listdir, removedirs
+from os import access, listdir, removedirs, stat
 from os import F_OK as file_exists
 from os import makedirs as mkdir
 from shutil import copytree, copy
 from docker.errors import APIError
+from hashlib import sha256
+from typing import Tuple
 from src.config import Config
-help(copytree)
+
+
+def hash_of_str(val: str) -> str:
+    """Get the sha256 hash of a string."""
+    return sha256(val.encode('ascii')).hexdigest()
+
+
+def perms(*filepath: Tuple[str, ...]) -> int:
+    """
+
+    :type filepath: tuple of strings to be passed to os.path.join
+    """
+    return stat(getpath(filepath)).st_mode
+
+
+def hash_of_file(*filepath: str) -> str:
+    """Get the sha256 hash of a file read by read_absolute."""
+    return hash_of_str(read_absolute(filepath))
 
 
 def read_relative(*fname: str) -> str:
