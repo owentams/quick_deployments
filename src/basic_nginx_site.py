@@ -192,8 +192,46 @@ class CopyFilesToMountedWebroot_BasicNginxSite(BasicNginXSite):
             )
 
 
-class SiteWithDockerVolumes_Mixin():
+class SiteWithDockerVolumes_Mixin(BasicNginXSite):
     """Methods for all BasicNginXSite objects that have docker volumes."""
+    def __init__(self, name: str, webroot_archive: str, conf_dir_archive: str):
+        network = self.get_network(name)
+        webroot_volume_name = "%s_webroot_vol" % name
+        config_volume_name = "%s_configuration_vol" % name
+        webroot = Mount(
+            target=os.path.join(root, 'usr', 'share', 'nginx', 'html'),
+            source=webroot_volume_name,
+            type="volume",
+            read_only=True
+        )
+        confdir = Mount(
+            target=os.path.join(root, 'etc', 'nginx'),
+            source=config_volume_name,
+            type="volume",
+            read_only=True
+        )
+        super(BasicNginXSite, self).__init__(
+            image="nginx:latest",
+            auto_remove=True,
+            network=network.id,
+            ports={
+                80:     80,
+                443:    443
+            },
+            mounts=[
+                confdir,
+                webroot
+            ]
+        )
+        with tarfile.open(webroot_archive) as wf:
+            self.container.put_archive(
+                "/usr/share/nginx/html", wf.read()
+            )
+        with tarfile.open(conf_dir_archive) as cf:
+            self.container.put_archive(
+                os.path.join(root, 'etc', 'nginx'), cf.read()
+            )
+
     @staticmethod
     def check_vol_for_files(volume_name: str, files: Iterable[str]) -> str:
         """Check volume for files, creating a tar archive of the missing ones.
@@ -241,9 +279,7 @@ class SiteWithDockerVolumes_Mixin():
         )
 
 
-class FolderCopiedToVolume_BasicNginXSite(
-            SiteWithDockerVolumes_Mixin, BasicNginXSite
-        ):
+class FolderCopiedToVolume_BasicNginXSite(SiteWithDockerVolumes_Mixin):
     def __init__(self, name: str, webroot: str):
         """A version with docker volumes, from a provded webroot folder.
 
@@ -251,18 +287,37 @@ class FolderCopiedToVolume_BasicNginXSite(
             containing the webroot to be recursively copied into the "webroot"
             docker volume mounted to the resulting container.
         """
-        pass
+        webroot_volume_name = "%s_webroot_vol" % name
+        config_volume_name = "%s_configuration_vol" % name
+        webroot_files = self.check_vol_for_files(
+            volume_name=webroot_volume_name,
+            files=[
+                os.path.join(dp, f) for dp, dn, fn in os.walk(
+                    webroot
+                ) for f in fn
+            ]
+        )
+        conf_dir_files = self.check_vol_for_files(
+            volume_name=config_volume_name,
+            files=[
+                os.path.join(dp, f) for dp, dn, fn in os.walk(
+                    Config.default_nginx_config
+                ) for f in fn
+            ]
+        )
+        super(SiteWithDockerVolumes_Mixin, self).__init__(
+            name, webroot_files, conf_dir_files
+        )
 
 
 class SpecifiedFilesCopiedToVolume_BasicNginXSite(
-            SiteWithDockerVolumes_Mixin, BasicNginXSite
+            SiteWithDockerVolumes_Mixin
         ):
     def __init__(self, name, *files):
         """A version with individually passed files, mounted to a docker volume.
 
         The files should be either strings or file-like objects, or a mixture.
         """
-        network = self.get_network(name)
         webroot_volume_name = "%s_webroot_vol" % name
         config_volume_name = "%s_configuration_vol" % name
         webroot_files = self.check_vol_for_files(webroot_volume_name, files)
@@ -274,36 +329,6 @@ class SpecifiedFilesCopiedToVolume_BasicNginXSite(
                 ) for f in fn
             ]
         )
-        webroot = Mount(
-            target=os.path.join(root, 'usr', 'share', 'nginx', 'html'),
-            source=webroot_volume_name,
-            type="volume",
-            read_only=True
+        super(SiteWithDockerVolumes_Mixin, self).__init__(
+            name, webroot_files, conf_dir_files
         )
-        confdir = Mount(
-            target=os.path.join(root, 'etc', 'nginx'),
-            source=config_volume_name,
-            type="volume",
-            read_only=True
-        )
-        super().__init__(
-            image="nginx:latest",
-            auto_remove=True,
-            network=network.id,
-            ports={
-                80:     80,
-                443:    443
-            },
-            mounts=[
-                confdir,
-                webroot
-            ]
-        )
-        with tarfile.open(webroot_files) as wf:
-            self.container.put_archive(
-                "/usr/share/nginx/html", wf.read()
-            )
-        with tarfile.open(conf_dir_files) as cf:
-            self.container.put_archive(
-                os.path.join(root, 'etc', 'nginx'), cf.read()
-            )

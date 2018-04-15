@@ -263,7 +263,7 @@ class TestCopyFilesToMountedWebroot(MountedNginXSite_Mixin):
             pass
 
 
-class DockerVolumeNginXSite_Mixin(TestBasicNginXSite):
+class DockerVolumeNginXSite_Tests_Mixin(TestBasicNginXSite):
     """Mixin for variants with regular docker volumes."""
     def test_webroot_files(self):
         """Assure that the files in the webroot are correct.
@@ -295,7 +295,7 @@ class DockerVolumeNginXSite_Mixin(TestBasicNginXSite):
         ) == hash_of_file(self.errpage_path)
 
 
-class Test_SpecifiedFilesCopiedToVolume(DockerVolumeNginXSite_Mixin):
+class Test_SpecifiedFilesCopiedToVolume(DockerVolumeNginXSite_Tests_Mixin):
     """Tests for the specified_files_copied_to_volume classmethod."""
     @property
     def instance_name(self) -> str:
@@ -305,8 +305,26 @@ class Test_SpecifiedFilesCopiedToVolume(DockerVolumeNginXSite_Mixin):
     @property
     def instance(self) -> BasicNginXSite:
         """The intance of the object to work with."""
-        return BasicNginXSite.specified_files_copied_to_volume(
+        return SpecifiedFilesCopiedToVolume_BasicNginXSite(
             self.instance_name,
             self.index_path,
             self.errpage_path
+        )
+
+
+class Test_FolderCopiedToVolume_BasicNginXSite(
+            DockerVolumeNginXSite_Tests_Mixin
+        ):
+    """Tests for the FolderCopiedToVolume_BasicNginXSite variant."""
+    @property
+    def instance_name(self):
+        """The name used by the container and other attributes."""
+        return "test_folder_copied_to_volume"
+
+    @property
+    def instance(self):
+        """The intance of the object to work with."""
+        return FolderCopiedToVolume_BasicNginXSite(
+            self.instance_name,
+            Config.default_nginx_webroot
         )
