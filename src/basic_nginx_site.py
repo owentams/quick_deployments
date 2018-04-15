@@ -141,12 +141,33 @@ class BasicNginXSite():
             elif isinstance(f, TextIOWrapper):
                 webroot_files.addfile(f)
         webroot_files.close()
+        webroot = Mount(
+            target=os.path.join(root, 'usr', 'share', 'nginx', 'html'),
+            source="%s_webroot_vol" % name,
+            type="volume",
+            read_only=True
+        )
+        confdir = Mount(
+            target=os.path.join(root, 'etc', 'nginx'),
+            source="%s_configuration_vol" % name,
+            type="volume",
+            read_only=True
+        )
+        obj = cls(
+            image="nginx:latest",
+            auto_remove=True,
+            network=network.id,
+            ports={
+                80:     80,
+                443:    443
+            },
+            mounts=[
+                confdir,
+                webroot
+            ]
+        )
         with tarfile.open(
-                    os.path.join(
-                        os.sep,
-                        "tmp",
-                        "%s_webroot.tar" % name
-                    ),
+                    os.path.join(root, "tmp", "%s_webroot.tar" % name),
                     'r'
                 ) as webroot_files:
             obj.container.put_archive(
