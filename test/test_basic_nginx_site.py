@@ -3,11 +3,16 @@ import os
 import tarfile
 from os import sep as root
 from docker.models.networks import Network
+from docker.errors import APIError
 from textwrap import dedent
 from requests import get, ConnectionError
 from pytest import raises
-from src.basic_nginx_site import BasicNginXSite
-from src.misc_functions import *
+from src.config import Config
+from src.basic_nginx_site import BasicNginXSite, BlankMounted_BasicNginXSite
+from src.basic_nginx_site import FolderCopiedToVolume_BasicNginXSite
+from src.basic_nginx_site import CopyFilesToMountedWebroot_BasicNginxSite
+from src.basic_nginx_site import SpecifiedFilesCopiedToVolume_BasicNginXSite
+from src.misc_functions import hash_of_file, perms
 from shutil import rmtree
 
 
@@ -226,7 +231,7 @@ class TestBlankMounted(MountedNginXSite_Mixin, TestBasicNginXSite):
     @property
     def instance(self) -> BasicNginXSite:
         """Aquire a test version of the object."""
-        return BasicNginXSite.blank_mounted(name=self.instance_name)
+        return BlankMounted_BasicNginXSite(name=self.instance_name)
 
 
 class TestCopyFilesToMountedWebroot(MountedNginXSite_Mixin):
@@ -234,7 +239,7 @@ class TestCopyFilesToMountedWebroot(MountedNginXSite_Mixin):
 
     @property
     def instance(self) -> BasicNginXSite:
-        return BasicNginXSite.copy_files_to_mounted_webroot(
+        return CopyFilesToMountedWebroot_BasicNginxSite(
             "test-copy_files_to_mounted_webroot-nginx",
             self.index_path,
             self.errpage_path
