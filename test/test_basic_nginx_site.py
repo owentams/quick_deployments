@@ -109,7 +109,7 @@ class TestBasicNginXSite:
         assert "nginx:latest" in self.instance.container.image.tags
 
     def test_inspection(self):
-        """Check to be sure instance.state is the same as inspect()."""\
+        """Check to be sure instance.state is the same as inspect()."""
         assert self.instance.state == self.inspect(self.instance.container.id)
 
     def test_get_request(self):
