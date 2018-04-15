@@ -3,11 +3,14 @@ import os
 import tarfile
 from os import sep as root
 from docker.models.networks import Network
+from docker.errors import APIError
 from textwrap import dedent
 from requests import get, ConnectionError
 from pytest import raises
+from src.config import Config
+from src.misc_functions import perms, hash_of_file, hash_of_str
+from src.misc_functions import check_for_image
 from src.basic_nginx_site import BasicNginXSite
-from src.misc_functions import *
 from shutil import rmtree
 
 
@@ -75,8 +78,19 @@ class TestBasicNginXSite:
             self.instance.container.remove()
 
     @staticmethod
-    def check_perms(*filepath) -> bool:
-        return perms(filepath) == 0o100644
+    def check_file(
+                test_file: str,
+                original_file: str,
+                permission_bits: int=0o100644
+            ) -> bool:
+        """Check that a file matches its original, and permissions."""
+        if not os.access(test_file, os.F_OK):
+            return False
+        if perms(test_file) != permission_bits:
+            return False
+        if hash_of_file(test_file) != hash_of_file(original_file):
+            return False
+        return True
 
     @staticmethod
     def inspect(container_id: int) -> dict:
@@ -120,9 +134,9 @@ class TestBasicNginXSite:
         self.instance.container.start()
         http_result = get("http://localhost")
         assert http_result.status_code == 200
-        assert sha256(http_result.content.encode('ascii')) == hash_of_file(
-            self.index_path
-        )
+        assert hash_of_str(
+                http_result.content
+            ) == hash_of_file(self.index_path)
         with raises(ConnectionError):
             # No cert, no HTTPS. Throws an error.
             get("https://localhost")
@@ -147,44 +161,43 @@ class MountedNginXSite_Mixin(TestBasicNginXSite):
             self.instance_name,
             "configuration"
         )
-        assert hash_of_file(conf_dir, "fastcgi_params") == \
-            "f37852d0113de30fa6bfc3d9b180ef99383c0673953" \
-            "0dd482a8538503afd5a58"
-        assert self.check_perms(conf_dir, "fastcgi_params"), \
-            "fastcgi_params permissions are wrong."
-        assert hash_of_file(conf_dir, "koi-utf") == \
-            "b5f8a6d411db5e5d11d151d50cd1e962444732593ad" \
-            "ec0e1ef0a8c6eebec63ee"
-        assert self.check_perms(conf_dir, "koi-utf")
-        assert hash_of_file(conf_dir, "koi-win") == \
-            "de518a9eafe86c8bc705e296d0ef26135835b46bdc"\
-            "0de01d1d50a630fa5d341e"
-        assert self.check_perms(conf_dir, "koi-win")
-        assert hash_of_file(conf_dir, "mime.types") \
-            == "d61b7bdd17d561ea037812761e6903970c6bbe5c7d"\
-            "ffd0fad069927f057c55a3"
-        assert self.check_perms(conf_dir, "mime.types")
-        assert hash_of_file(conf_dir, "nginx.conf")\
-            == "772e914d404163a563e888730a3d4c5d86fbb1a5d3"\
-            "ee6b8c58c7eeda9af1db5b"
-        assert self.check_perms(conf_dir, "nginx.conf")
-        assert hash_of_file(conf_dir, "scgi_params")\
-            == "f27b2027c571ccafcfb0fbb3f54d7aeee11a984e3a"\
-            "0f5a1fdf14629030fc9011"
-        assert self.check_perms(conf_dir, "scgi_params")
-        assert hash_of_file(conf_dir, "uwsgi_params")\
-            == "015cb581c2eb84b1a1ac9b575521d5881f791f632b"\
-            "fa62f34b26ba97d70c0d4f"
-        assert self.check_perms(conf_dir, "uwsgi_params")
-        assert hash_of_file(conf_dir, "win-utf")\
-            == "55adf050bad0cb60cbfe18649f8f17cd405fece0cc"\
-            "65eb78dac72c74c9dad944"
-        assert self.check_perms(conf_dir, "win-utf")
+        assert self.check_file(
+            os.path.join(conf_dir, "fastcgi_params"),
+            os.path.join(Config.default_nginx_config, "fastcgi_params")
+        )
+        assert self.check_file(
+            os.path.join(conf_dir, "koi-utf"),
+            os.path.join(Config.default_nginx_config, "koi-utf")
+        )
+        assert self.check_file(
+            os.path.join(conf_dir, "koi-win"),
+            os.path.join(Config.default_nginx_config, "koi-win")
+        )
+        assert self.check_file(
+            os.path.join(conf_dir, "mime.types"),
+            os.path.join(Config.default_nginx_config, "mime.types")
+        )
+        assert self.check_file(
+            os.path.join(conf_dir, "nginx.conf"),
+            os.path.join(Config.default_nginx_config, "nginx.conf")
+        )
+        assert self.check_file(
+            os.path.join(conf_dir, "scgi_params"),
+            os.path.join(Config.default_nginx_config, "scgi_params")
+        )
+        assert self.check_file(
+            os.path.join(conf_dir, "uwsgi_params"),
+            os.path.join(Config.default_nginx_config, "uwsgi_params")
+        )
+        assert self.check_file(
+            os.path.join(conf_dir, "win-utf"),
+            os.path.join(Config.default_nginx_config, "win-utf")
+        )
         assert os.path.isdir(os.path.join(conf_dir, "conf.d"))
-        assert hash_of_file(conf_dir, "conf.d", "default.conf")\
-            == "ba015afe3042196e5d0bd117a9e18ac826f52e44cb"\
-            "29321a9b08f7dbf48c62a5"
-        assert self.check_perms(conf_dir, "conf.d", "default.conf")
+        assert self.check_file(
+            os.path.join(conf_dir, "conf.d", "default.conf"),
+            os.path.join(Config.default_nginx_config, "conf.d", "default.conf")
+        )
 
     def test_webroot_files(self):
         """Test that the configuration files are correct.
@@ -200,14 +213,14 @@ class MountedNginXSite_Mixin(TestBasicNginXSite):
             self.instance_name,
             "webroot"
         )
-        assert hash_of_file(webroot_dir, "50x.html")\
-            == "3c264d74770fd706d59c68d90ca1eb893ac379a666f"\
-            "f136f9acc66ca01daec02"
-        assert self.check_perms(webroot_dir, "50x.html")
-        assert hash_of_file(webroot_dir, "index.html")\
-            == "38ffd4972ae513a0c79a8be4573403edcd709f0f572"\
-            "105362b08ff50cf6de521"
-        assert self.check_perms(webroot_dir, "index.html")
+        assert self.check_file(
+            os.path.join(webroot_dir, "50x.html"),
+            os.path.join(Config.default_nginx_webroot, "50x.html")
+        )
+        assert self.check_file(
+            os.path.join(webroot_dir, "index.html"),
+            os.path.join(Config.default_nginx_webroot, "index.html")
+        )
 
     def test_that_files_are_placed_if_not_present(self):
         """Deletes the webroot & confdir then checks for the files to be back.
