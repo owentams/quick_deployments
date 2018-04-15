@@ -1,9 +1,10 @@
 """A quick deployment for a basic NginX web page, with webroot provided."""
 import os
 import tarfile
-from shutil import copy, copytree
+from shutil import copy
 from textwrap import dedent
-from docker.types import Mount, Network
+from docker.types import Mount
+from docker.models.networks import Network
 from _io import TextIOWrapper
 from src.config import Config
 from src.misc_functions import check_isdir, check_for_image
@@ -53,7 +54,7 @@ class BasicNginXSite():
         The default nginx configuration will be copied to
         /usr/share/quick_deployments/static/{name}/configuration
         """
-        network = get_network(name)
+        network = cls.get_network(name)
         parent_dir = os.path.join(
             os.sep,
             "usr",
@@ -156,7 +157,7 @@ class BasicNginXSite():
         The default nginx configuration will be copied to
         /usr/share/quick_deployments/static/{name}/configuration
         """
-        network = self.get_network()
+        network = cls.get_network(name)
         parent_dir = os.path.join(
             os.sep,
             "usr",
@@ -209,7 +210,9 @@ class BasicNginXSite():
         obj.mounts = (confdir, webroot)
         return obj
 
-    def get_network(self, name: str) -> Network:
+    @staticmethod
+    def get_network(name: str) -> Network:
+        """Retrieve the appropriate network for this named service."""
         if "%s_network" % name not in [
                     net.name for net in Config.client.networks.list()
                 ]:

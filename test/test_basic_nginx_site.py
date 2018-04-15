@@ -1,21 +1,24 @@
 """Tests for the BasicNginXSite."""
 import os
+import tarfile
+from os import sep as root
 from docker.models.networks import Network
 from docker.errors import APIError
 from textwrap import dedent
 from hashlib import sha256
 from requests import get, ConnectionError
-from pytest import raises, fixture
+from pytest import raises
 from src.config import Config
 from src.basic_nginx_site import BasicNginXSite
 from shutil import rmtree
 
 
-class TestBasicNginXSite():
+class TestBasicNginXSite:
     """Tests that apply to all of the variations on BasicNginXSite."""
     instance_name = "test_nginx_site"
 
-    def get_test_network(self) -> Network:
+    @property
+    def container_network(self) -> Network:
         """Aquire a test network based on the name passed."""
         if "%s_network" % self.instance_name in [
                     net.name for net in Config.client.networks.list()
@@ -37,13 +40,14 @@ class TestBasicNginXSite():
                 name="%s_network" % self.instance_name
             )
 
-    def get_test_instance(self) -> BasicNginXSite:
+    @property
+    def instance(self) -> BasicNginXSite:
         """Aquire a BasicNginXSite based on the name and other args passed."""
         return BasicNginXSite(
             image="nginx:latest",
             name=self.instance_name,
             auto_remove=True,
-            network=self.get_test_network(),
+            network=self.container_network,
             ports={
                 80:     80,
                 443:    443
@@ -57,31 +61,29 @@ class TestBasicNginXSite():
         stopped.
         """
         try:
-            self.get_test_instance().container.stop()
+            self.instance.container.stop()
         except APIError:
             # if the container isn't running it will throw an error for
             # attempting to stop it.
-            self.get_test_instance().container.remove()
+            self.instance.container.remove()
 
     @staticmethod
     def inspect(container_id: int) -> dict:
         """Inspect the given container."""
         return Config.client.api.inspect_container(container_id)
 
-    def test_network(self):
+    def test_for_network(self):
         """Test that the network is properly configured."""
-        inst = self.get_test_instance()
         assert "%s_network" % self.instance_name in [
                 net for net in self.inspect(
-                    inst.container.id
+                    self.instance.container.id
                 )['NetworkSettings']['Networks']
             ]
 
     def test_ports(self):
         """Test that the right ports are open."""
-        inst = self.get_test_instance()
         port_bindings = self.inspect(
-                inst.container.id
+                self.instance.container.id
             )['HostConfig']['PortBindings']
         assert "443/tcp" in port_bindings.keys()
         assert "80/tcp" in port_bindings.keys()
@@ -93,18 +95,33 @@ class TestBasicNginXSite():
 
     def test_image(self):
         """Make sure the retrieved container is an NginX container."""
-        assert "nginx:latest" in self.get_test_instance().container.image.tags
+        assert "nginx:latest" in self.instance.container.image.tags
 
     def test_inspection(self):
         """Check to be sure instance.state is the same as inspect()."""
-        instance = self.get_test_instance()
+        instance = self.instance
         assert instance.state == self.inspect(instance.container.id)
+
+    def test_get_request(self):
+        """Start the container and check the results of an HTTP request.
+
+        Performs requests on 80 and 443.
+        """
+        self.instance.container.start()
+        http_result = get("http://localhost")
+        assert http_result.status_code == 200
+        assert sha256(http_result.content.encode('ascii')) == \
+            "38ffd4972ae513a0c79a8be4573403edcd709f0f572105362b08ff50cf6de521"
+        with raises(ConnectionError):
+            # No cert, no HTTPS. Throws an error.
+            get("https://localhost")
 
 
 class TestBlankMounted(TestBasicNginXSite):
     """Test the blank_mounted constructor for a BasicNginXSite."""
 
-    def get_test_instance(self) -> BasicNginXSite:
+    @property
+    def instance(self) -> BasicNginXSite:
         """Aquire a test version of the object."""
         return BasicNginXSite.blank_mounted(name=self.instance_name)
 
@@ -226,21 +243,60 @@ class TestBlankMounted(TestBasicNginXSite):
         They should be checked for and repopulated every time
         get_test_instance is called.
         """
-        for mount in self.get_test_instance().mounts:
+        for mount in self.instance.mounts:
             rmtree(mount['Source'])
         self.test_webroot_files()
         self.test_configuration_files()
 
-    def test_get_request(self):
-        """Start the container and check the results of an HTTP request.
 
-        Performs requests on 80 and 443.
-        """
-        self.get_test_instance().container.start()
-        http_result = get("http://localhost")
-        assert http_result.status_code == 200
-        assert sha256(http_result.content.encode('ascii')) == \
-            "38ffd4972ae513a0c79a8be4573403edcd709f0f572105362b08ff50cf6de521"
-        with raises(ConnectionError):
-            # No cert, no HTTPS. Throws an error.
-            get("https://localhost")
+class TestCopyFilesToMountedWebroot(TestBasicNginXSite):
+    """Tests for the copy_files_to_mounted_webroot classmethod."""
+    @property
+    def index_path(self) -> str:
+        """The path for the default index file."""
+        return os.path.join(Config.default_nginx_webroot, 'index.html')
+
+    @property
+    def errpage_path(self) -> str:
+        return os.path.join(Config.default_nginx_webroot, '50x.html')
+
+    @property
+    def instance(self) -> BasicNginXSite:
+        return BasicNginXSite.copy_files_to_mounted_webroot(
+            "test-copy_files_to_mounted_webroot-nginx",
+            self.index_path,
+            self.errpage_path
+        )
+
+    def teardown_method(self):
+        if os.listdir(os.path.join(root, 'tmp', 'test-webroot')):
+            rmtree(os.path.join(root, 'tmp', 'test-webroot'))
+
+    def test_webroot_files(self):
+        """Assure that the files in the webroot are correct.
+
+        These are the index and errpage files passed in the get_test_instance
+        method. """
+        parentdir = os.path.join(root, 'usr', 'share', 'nginx', 'html')
+        tarchive, _ = self.instance.container.get_archive(
+            os.path.join(parentdir, 'index.html')
+        )
+        with open('/tmp/test-index.html.tar', 'w') as outfile:
+            for chunk in tarchive:
+                outfile.write(chunk)
+        tarchive, _ = self.instance.container.get_archive(
+            os.path.join(parentdir, '50x.html')
+        )
+        with open('/tmp/test-index.html.tar', 'w') as outfile:
+            for chunk in tarchive:
+                outfile.write(chunk)
+        with tarfile.open('/tmp/test-index.html.tar', 'r') as tf:
+            tf.extractall('/tmp/test-webroot')
+        with open('/tmp/test-webroot/index.html') as testfile:
+            with open(self.index_path) as origfile:
+                assert sha256(testfile.read().encode('ascii')).hexdigest() \
+                    == sha256(origfile.read().encode('ascii')).hexdigest()
+        with open('/tmp/test-webroot/50x.html') as testfile:
+            with open(self.errpage_path) as origfile:
+                assert sha256(testfile.read().encode('ascii')).hexdigest()\
+                    == sha256(origfile.read().encode('ascii')).hexdigest()
