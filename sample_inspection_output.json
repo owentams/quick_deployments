@@ -1,8 +1,11 @@
 {
-  "Id": "4b1cff528dccbdc4177652ba18810eaef1df918310a90af5b987c1c2635ad8c6",
-  "Created": "2018-04-13T18:51:53.247201241Z",
-  "Path": "/hello",
-  "Args": [],
+  "Id": "88e735fa7dde244842cf9224425490e59b280bd633f2df08db7183fc960f6161",
+  "Created": "2018-04-15T02:28:08.159567222Z",
+  "Path": "nginx",
+  "Args": [
+    "-g",
+    "daemon off;"
+  ],
   "State": {
     "Status": "created",
     "Running": false,
@@ -16,12 +19,12 @@
     "StartedAt": "0001-01-01T00:00:00Z",
     "FinishedAt": "0001-01-01T00:00:00Z"
   },
-  "Image": "sha256:e38bc07ac18ee64e6d59cf2eafcdddf9cec2364dfe129fe0af75f1b0194e0c96",
+  "Image": "sha256:b175e7467d666648e836f666d762be92a56938efe16c874a73bab31be5f99a3b",
   "ResolvConfPath": "",
   "HostnamePath": "",
   "HostsPath": "",
   "LogPath": "",
-  "Name": "/thirsty_villani",
+  "Name": "/thirsty_lamarr",
   "RestartCount": 0,
   "Driver": "overlay2",
   "Platform": "linux",
@@ -36,13 +39,26 @@
       "Type": "json-file",
       "Config": {}
     },
-    "NetworkMode": "default",
-    "PortBindings": null,
+    "NetworkMode": "test-copy_files_to_mounted_webroot-nginx_network",
+    "PortBindings": {
+      "443/tcp": [
+        {
+          "HostIp": "",
+          "HostPort": "443"
+        }
+      ],
+      "80/tcp": [
+        {
+          "HostIp": "",
+          "HostPort": "80"
+        }
+      ]
+    },
     "RestartPolicy": {
       "Name": "",
       "MaximumRetryCount": 0
     },
-    "AutoRemove": false,
+    "AutoRemove": true,
     "VolumeDriver": "",
     "VolumesFrom": null,
     "CapAdd": null,
@@ -99,41 +115,83 @@
     "CpuCount": 0,
     "CpuPercent": 0,
     "IOMaximumIOps": 0,
-    "IOMaximumBandwidth": 0
+    "IOMaximumBandwidth": 0,
+    "Mounts": [
+      {
+        "Type": "bind",
+        "Source": "/usr/share/quick_deployments/static/test-copy_files_to_mounted_webroot-nginx/configuration",
+        "Target": "/etc/nginx/",
+        "ReadOnly": true
+      },
+      {
+        "Type": "bind",
+        "Source": "/usr/share/quick_deployments/static/test-copy_files_to_mounted_webroot-nginx/webroot",
+        "Target": "/usr/share/nginx/html",
+        "ReadOnly": true
+      }
+    ]
   },
   "GraphDriver": {
     "Data": {
-      "LowerDir": "/var/lib/docker/overlay2/d1261228be9a921f13476fc536e352d86ed5d5b31cb06f92d9c4eb661d0b0983-init/diff:/var/lib/docker/overlay2/cc7aad084b889345948d738e9fba06369a188ac80f65575dc0ca4cd71128643b/diff",
-      "MergedDir": "/var/lib/docker/overlay2/d1261228be9a921f13476fc536e352d86ed5d5b31cb06f92d9c4eb661d0b0983/merged",
-      "UpperDir": "/var/lib/docker/overlay2/d1261228be9a921f13476fc536e352d86ed5d5b31cb06f92d9c4eb661d0b0983/diff",
-      "WorkDir": "/var/lib/docker/overlay2/d1261228be9a921f13476fc536e352d86ed5d5b31cb06f92d9c4eb661d0b0983/work"
+      "LowerDir": "/var/lib/docker/overlay2/e07152f87580e8379ae522095115d658b86bc3ebf7d92f74d76afd3d425b31a4-init/diff:/var/lib/docker/overlay2/0a22eb09f326e03c5f584bd0e1a40428f686fa17bd9fe39e450cfe203a965663/diff:/var/lib/docker/overlay2/66757adb37dbadafeadd26250172f4b3281979172a5f4eb92e8229fe5d5e8ed4/diff:/var/lib/docker/overlay2/a0bcf445436fc73d14905ff8b3d5c732e57a27af454a0a3138d3ed95be132e3e/diff",
+      "MergedDir": "/var/lib/docker/overlay2/e07152f87580e8379ae522095115d658b86bc3ebf7d92f74d76afd3d425b31a4/merged",
+      "UpperDir": "/var/lib/docker/overlay2/e07152f87580e8379ae522095115d658b86bc3ebf7d92f74d76afd3d425b31a4/diff",
+      "WorkDir": "/var/lib/docker/overlay2/e07152f87580e8379ae522095115d658b86bc3ebf7d92f74d76afd3d425b31a4/work"
     },
     "Name": "overlay2"
   },
-  "Mounts": [],
+  "Mounts": [
+    {
+      "Type": "bind",
+      "Source": "/usr/share/quick_deployments/static/test-copy_files_to_mounted_webroot-nginx/configuration",
+      "Destination": "/etc/nginx",
+      "Mode": "",
+      "RW": false,
+      "Propagation": "rprivate"
+    },
+    {
+      "Type": "bind",
+      "Source": "/usr/share/quick_deployments/static/test-copy_files_to_mounted_webroot-nginx/webroot",
+      "Destination": "/usr/share/nginx/html",
+      "Mode": "",
+      "RW": false,
+      "Propagation": "rprivate"
+    }
+  ],
   "Config": {
-    "Hostname": "4b1cff528dcc",
+    "Hostname": "88e735fa7dde",
     "Domainname": "",
     "User": "",
     "AttachStdin": false,
     "AttachStdout": true,
     "AttachStderr": true,
+    "ExposedPorts": {
+      "443/tcp": {},
+      "80/tcp": {}
+    },
     "Tty": false,
     "OpenStdin": false,
     "StdinOnce": false,
     "Env": [
-      "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "NGINX_VERSION=1.13.12-1~stretch",
+      "NJS_VERSION=1.13.12.0.2.0-1~stretch"
     ],
     "Cmd": [
-      "/hello"
+      "nginx",
+      "-g",
+      "daemon off;"
     ],
     "ArgsEscaped": true,
-    "Image": "hello-world",
+    "Image": "nginx:latest",
     "Volumes": null,
     "WorkingDir": "",
     "Entrypoint": null,
     "OnBuild": null,
-    "Labels": {}
+    "Labels": {
+      "maintainer": "NGINX Docker Maintainers <docker-maint@nginx.com>"
+    },
+    "StopSignal": "SIGTERM"
   },
   "NetworkSettings": {
     "Bridge": "",
@@ -154,7 +212,7 @@
     "IPv6Gateway": "",
     "MacAddress": "",
     "Networks": {
-      "bridge": {
+      "test-copy_files_to_mounted_webroot-nginx_network": {
         "IPAMConfig": null,
         "Links": null,
         "Aliases": null,
