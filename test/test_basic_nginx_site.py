@@ -148,8 +148,8 @@ class MountedNginXSite_Mixin(TestBasicNginXSite):
             "configuration"
         )
         assert hash_of_file(conf_dir, "fastcgi_params") == \
-           "f37852d0113de30fa6bfc3d9b180ef99383c0673953" \
-           "0dd482a8538503afd5a58"
+            "f37852d0113de30fa6bfc3d9b180ef99383c0673953" \
+            "0dd482a8538503afd5a58"
         assert self.check_perms(conf_dir, "fastcgi_params"), \
             "fastcgi_params permissions are wrong."
         assert hash_of_file(conf_dir, "koi-utf") == \
@@ -157,33 +157,33 @@ class MountedNginXSite_Mixin(TestBasicNginXSite):
             "ec0e1ef0a8c6eebec63ee"
         assert self.check_perms(conf_dir, "koi-utf")
         assert hash_of_file(conf_dir, "koi-win") == \
-             "de518a9eafe86c8bc705e296d0ef26135835b46bdc"\
-             "0de01d1d50a630fa5d341e"
+            "de518a9eafe86c8bc705e296d0ef26135835b46bdc"\
+            "0de01d1d50a630fa5d341e"
         assert self.check_perms(conf_dir, "koi-win")
         assert hash_of_file(conf_dir, "mime.types") \
-                == "d61b7bdd17d561ea037812761e6903970c6bbe5c7d"\
-                "ffd0fad069927f057c55a3"
+            == "d61b7bdd17d561ea037812761e6903970c6bbe5c7d"\
+            "ffd0fad069927f057c55a3"
         assert self.check_perms(conf_dir, "mime.types")
         assert hash_of_file(conf_dir, "nginx.conf")\
-                == "772e914d404163a563e888730a3d4c5d86fbb1a5d3"\
-                "ee6b8c58c7eeda9af1db5b"
+            == "772e914d404163a563e888730a3d4c5d86fbb1a5d3"\
+            "ee6b8c58c7eeda9af1db5b"
         assert self.check_perms(conf_dir, "nginx.conf")
         assert hash_of_file(conf_dir, "scgi_params")\
-                == "f27b2027c571ccafcfb0fbb3f54d7aeee11a984e3a"\
-                "0f5a1fdf14629030fc9011"
+            == "f27b2027c571ccafcfb0fbb3f54d7aeee11a984e3a"\
+            "0f5a1fdf14629030fc9011"
         assert self.check_perms(conf_dir, "scgi_params")
         assert hash_of_file(conf_dir, "uwsgi_params")\
-                == "015cb581c2eb84b1a1ac9b575521d5881f791f632b"\
-                "fa62f34b26ba97d70c0d4f"
+            == "015cb581c2eb84b1a1ac9b575521d5881f791f632b"\
+            "fa62f34b26ba97d70c0d4f"
         assert self.check_perms(conf_dir, "uwsgi_params")
         assert hash_of_file(conf_dir, "win-utf")\
-                == "55adf050bad0cb60cbfe18649f8f17cd405fece0cc"\
-                "65eb78dac72c74c9dad944"
+            == "55adf050bad0cb60cbfe18649f8f17cd405fece0cc"\
+            "65eb78dac72c74c9dad944"
         assert self.check_perms(conf_dir, "win-utf")
         assert os.path.isdir(os.path.join(conf_dir, "conf.d"))
         assert hash_of_file(conf_dir, "conf.d", "default.conf")\
-                == "ba015afe3042196e5d0bd117a9e18ac826f52e44cb"\
-                "29321a9b08f7dbf48c62a5"
+            == "ba015afe3042196e5d0bd117a9e18ac826f52e44cb"\
+            "29321a9b08f7dbf48c62a5"
         assert self.check_perms(conf_dir, "conf.d", "default.conf")
 
     def test_webroot_files(self):
@@ -201,12 +201,12 @@ class MountedNginXSite_Mixin(TestBasicNginXSite):
             "webroot"
         )
         assert hash_of_file(webroot_dir, "50x.html")\
-                == "3c264d74770fd706d59c68d90ca1eb893ac379a666f"\
-                "f136f9acc66ca01daec02"
+            == "3c264d74770fd706d59c68d90ca1eb893ac379a666f"\
+            "f136f9acc66ca01daec02"
         assert self.check_perms(webroot_dir, "50x.html")
         assert hash_of_file(webroot_dir, "index.html")\
-                == "38ffd4972ae513a0c79a8be4573403edcd709f0f572"\
-                "105362b08ff50cf6de521"
+            == "38ffd4972ae513a0c79a8be4573403edcd709f0f572"\
+            "105362b08ff50cf6de521"
         assert self.check_perms(webroot_dir, "index.html")
 
     def test_that_files_are_placed_if_not_present(self):
@@ -241,8 +241,10 @@ class TestCopyFilesToMountedWebroot(MountedNginXSite_Mixin):
         )
 
     def teardown_method(self):
-        if os.listdir(os.path.join(root, 'tmp', 'test-webroot')):
+        try:
             rmtree(os.path.join(root, 'tmp', 'test-webroot'))
+        except FileNotFoundError:
+            pass
 
 
 class DockerVolumeNginXSite_Mixin(TestBasicNginXSite):
