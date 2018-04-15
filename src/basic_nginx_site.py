@@ -125,8 +125,7 @@ class BasicNginXSite():
 
         The files should be either strings or file-like objects, or a mixture.
         """
-        network = self.get_network(name)
-        parent_dir = self.get_parent_dir(name)
+        network = cls.get_network(name)
         webroot_files = tarfile.open(
             os.path.join(
                 root,
@@ -135,11 +134,23 @@ class BasicNginXSite():
             ),
             'w'
         )
-        for f in files:
-            if isinstance(f, str):
-                webroot_files.add(f)
-            elif isinstance(f, TextIOWrapper):
-                webroot_files.addfile(f)
+        if "%s_webroot_vol" % name in [
+                    v.name for v in Config.client.volumes.list()
+                ]:
+            for f in files:
+                if f not in os.listdir(Config.client.api.inspect_volume(
+                            "%s_webroot_vol"
+                        )['Mountpoint']):
+                    if isinstance(f, str):
+                        webroot_files.add(f)
+                    elif isinstance(f, TextIOWrapper):
+                        webroot_files.addfile(f)
+        else:
+            for f in files:
+                if isinstance(f, str):
+                    webroot_files.add(f)
+                elif isinstance(f, TextIOWrapper):
+                    webroot_files.addfile(f)
         webroot_files.close()
         webroot = Mount(
             target=os.path.join(root, 'usr', 'share', 'nginx', 'html'),
