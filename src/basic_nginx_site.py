@@ -37,12 +37,33 @@ class BasicNginXSite():
                 version=kwargs['image'].split(':', maxsplit=1)[1]
             )
         else:
-            raise ValueError("Image must be specified.")
+            raise ValueError(
+                "Image must be specified. Received kwargs: "
+                + str(kwargs.keys())
+            )
         if "name" in kwargs.keys():
             for cont in Config.client.containers.list(
                         all=True, filters={'name': kwargs['name']}
                     ):
+                try:
+                    cont.stop()
+                except APIError:
+                    pass
                 cont.remove(v=False)
+        for cont in Config.client.containers.list():
+            portbindings = Config.client.api.inspect_container(
+                cont.id
+            )['HostConfig']['PortBindings'].keys()
+            if '80/tcp' in portbindings or '443/tcp' in portbindings:
+                cont.stop()
+        open_ports = [
+            int(port) for port in
+                Config.port_scanner.scan()['nmap']['scan']['127.0.0.1']['tcp']
+        ]
+        if 80 in open_ports or 443 in open_ports:
+            raise RuntimeError(
+                "Ports are occupied by a non-docker application!"
+            )
         try:
             self.mounts = kwargs['mounts']
         except KeyError:

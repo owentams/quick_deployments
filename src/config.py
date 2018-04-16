@@ -2,7 +2,7 @@
 from docker import DockerClient
 from os import sep as root
 from os.path import join
-
+from nmap.nmap import PortScanner
 
 class Config():
     """Configuration values. Static object."""
@@ -18,3 +18,4 @@ class Config():
         'nginx_default',
         'configuration'
     )
+    scanner = PortScanner()
