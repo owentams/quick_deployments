@@ -278,7 +278,7 @@ class SiteWithDockerVolumes_Mixin(BasicNginXSite):
                 filehashes = [
                     hash_of_file(f) for f in os.listdir(
                         Config.client.api.inspect_volume(
-                            "%s_webroot_vol"
+                            volume_name
                         )['Mountpoint']
                     )
                 ]
