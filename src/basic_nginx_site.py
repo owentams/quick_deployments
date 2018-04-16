@@ -125,7 +125,7 @@ class BlankMounted_BasicNginXSite(BasicNginXSite):
             no_copy=False,
             read_only=True
         )
-        super().__init__(
+        super(BlankMounted_BasicNginXSite, self).__init__(
             image="nginx:latest",
             auto_remove=True,
             network=network.id,
@@ -172,7 +172,7 @@ class CopyFilesToMountedWebroot_BasicNginxSite(BasicNginXSite):
             no_copy=False,
             read_only=True
         )
-        super().__init__(
+        super(CopyFilesToMountedWebroot_BasicNginxSite, self).__init__(
             image="nginx:latest",
             auto_remove=True,
             network=network.id,
@@ -210,7 +210,7 @@ class SiteWithDockerVolumes_Mixin(BasicNginXSite):
             type="volume",
             read_only=True
         )
-        super(BasicNginXSite, self).__init__(
+        super(SiteWithDockerVolumes_Mixin, self).__init__(
             image="nginx:latest",
             auto_remove=True,
             network=network.id,
@@ -305,14 +305,12 @@ class FolderCopiedToVolume_BasicNginXSite(SiteWithDockerVolumes_Mixin):
                 ) for f in fn
             ]
         )
-        super(SiteWithDockerVolumes_Mixin, self).__init__(
+        super(FolderCopiedToVolume_BasicNginXSite, self).__init__(
             name, webroot_files, conf_dir_files
         )
 
 
-class SpecifiedFilesCopiedToVolume_BasicNginXSite(
-            SiteWithDockerVolumes_Mixin
-        ):
+class SpecifiedFilesCopiedToVolume_BasicNginXSite(SiteWithDockerVolumes_Mixin):
     def __init__(self, name, *files):
         """A version with individually passed files, mounted to a docker volume.
 
@@ -329,6 +327,6 @@ class SpecifiedFilesCopiedToVolume_BasicNginXSite(
                 ) for f in fn
             ]
         )
-        super(SiteWithDockerVolumes_Mixin, self).__init__(
+        super(SpecifiedFilesCopiedToVolume_BasicNginXSite, self).__init__(
             name, webroot_files, conf_dir_files
         )
