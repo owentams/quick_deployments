@@ -18,4 +18,4 @@ class Config():
         'nginx_default',
         'configuration'
     )
-    scanner = PortScanner()
+    port_scanner = PortScanner()

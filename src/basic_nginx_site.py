@@ -7,6 +7,7 @@ from textwrap import dedent
 from typing import Iterable
 from docker.types import Mount
 from docker.models.networks import Network
+from docker.errors import APIError
 from _io import TextIOWrapper
 from src.config import Config
 from src.misc_functions import check_isdir, check_for_image, hash_of_file
