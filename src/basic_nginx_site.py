@@ -38,7 +38,8 @@ class BasicNginXSite():
             )
         else:
             raise ValueError(
-                "Image must be specified. Received kwargs: " str(kwargs.keys())
+                "Image must be specified. Received kwargs: "
+                + str(kwargs.keys())
             )
         if "name" in kwargs.keys():
             for cont in Config.client.containers.list(
