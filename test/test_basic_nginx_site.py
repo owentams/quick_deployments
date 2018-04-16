@@ -137,7 +137,7 @@ class TestBasicNginXSite:
         http_result = get("http://localhost")
         assert http_result.status_code == 200
         assert hash_of_str(
-                http_result.content
+                http_result.content.decode()
             ) == hash_of_file(self.index_path)
         with raises(ConnectionError):
             # No cert, no HTTPS. Throws an error.
