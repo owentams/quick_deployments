@@ -239,6 +239,9 @@ class MountedNginXSite_Mixin(TestBasicNginXSite):
 class TestBlankMounted(MountedNginXSite_Mixin, TestBasicNginXSite):
     """Test the blank_mounted constructor for a BasicNginXSite."""
     @property
+    def instance_name(self) -> str:
+        return "test-blank_mounted_version"
+    @property
     def instance(self) -> BasicNginXSite:
         """Aquire a test version of the object."""
         return BlankMounted_BasicNginXSite(name=self.instance_name)
@@ -246,7 +249,9 @@ class TestBlankMounted(MountedNginXSite_Mixin, TestBasicNginXSite):
 
 class TestCopyFilesToMountedWebroot(MountedNginXSite_Mixin):
     """Tests for the copy_files_to_mounted_webroot classmethod."""
-
+    @property
+    def instance_name(self) -> str:
+        return "test-copy_files_to_mount"
     @property
     def instance(self) -> BasicNginXSite:
         return CopyFilesToMountedWebroot_BasicNginxSite(
