@@ -18,7 +18,9 @@ from shutil import rmtree
 
 class TestBasicNginXSite:
     """Tests that apply to all of the variations on BasicNginXSite."""
-    instance_name = "test_nginx_site"
+    @property
+    def instance_name(self) -> str:
+        return "test_nginx_site"
 
     @property
     def index_path(self) -> str:
@@ -240,7 +242,7 @@ class TestBlankMounted(MountedNginXSite_Mixin, TestBasicNginXSite):
     """Test the blank_mounted constructor for a BasicNginXSite."""
     @property
     def instance_name(self) -> str:
-        return "test-blank_mounted_version"
+        return "test-blank_mounted"
     @property
     def instance(self) -> BasicNginXSite:
         """Aquire a test version of the object."""
@@ -251,7 +253,7 @@ class TestCopyFilesToMountedWebroot(MountedNginXSite_Mixin):
     """Tests for the copy_files_to_mounted_webroot classmethod."""
     @property
     def instance_name(self) -> str:
-        return "test-copy_files_to_mount"
+        return "test-files2mount"
     @property
     def instance(self) -> BasicNginXSite:
         return CopyFilesToMountedWebroot_BasicNginxSite(
@@ -305,7 +307,7 @@ class Test_SpecifiedFilesCopiedToVolume(DockerVolumeNginXSite_Tests_Mixin):
     @property
     def instance_name(self) -> str:
         """The name used by the container and other attributes."""
-        return "test_specified_files_copied_to_volume"
+        return "test_files2vol"
 
     @property
     def instance(self) -> BasicNginXSite:
@@ -324,7 +326,7 @@ class Test_FolderCopiedToVolume_BasicNginXSite(
     @property
     def instance_name(self):
         """The name used by the container and other attributes."""
-        return "test_folder_copied_to_volume"
+        return "test-dir2vol"
 
     @property
     def instance(self):
