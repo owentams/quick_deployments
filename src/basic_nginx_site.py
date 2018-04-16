@@ -4,7 +4,7 @@ from os import sep as root
 import tarfile
 from shutil import copy
 from textwrap import dedent
-from typing import Iterable
+from typing import Iterable, Union, Tuple
 from docker.types import Mount
 from docker.models.networks import Network
 from docker.errors import APIError
@@ -214,141 +214,69 @@ class CopyFilesToMountedWebroot_BasicNginxSite(BasicNginXSite):
             )
 
 
-class SiteWithDockerVolumes_Mixin(BasicNginXSite):
-    """Methods for all BasicNginXSite objects that have docker volumes."""
-    def __init__(self, name: str, webroot_archive: str, conf_dir_archive: str):
-        network = self.get_network(name)
-        webroot_volume_name = "%s_webroot_vol" % name
-        config_volume_name = "%s_configuration_vol" % name
-        webroot = Mount(
-            target=os.path.join(root, 'usr', 'share', 'nginx', 'html'),
-            source=webroot_volume_name,
-            type="volume",
-            read_only=True
-        )
-        confdir = Mount(
-            target=os.path.join(root, 'etc', 'nginx'),
-            source=config_volume_name,
-            type="volume",
-            read_only=True
-        )
-        super(SiteWithDockerVolumes_Mixin, self).__init__(
-            image="nginx:latest",
-            auto_remove=True,
-            network=network.id,
-            ports={
-                80:     80,
-                443:    443
-            },
-            mounts=[
-                confdir,
-                webroot
-            ]
-        )
-        with tarfile.open(webroot_archive) as wf:
-            self.container.put_archive(
-                "/usr/share/nginx/html", wf.read()
+class CopyFoldersToMounts(BasicNginXSite):
+    """Allows folders to be specified that hold various mounted directories.
+
+    webroot and confdir should both either be a tarfile.TarFile object (an open
+    tarfile) or a string defining a filepath to be copied. The contents of any
+    specified mount source will override what is in the container already, if
+    anything.
+
+    Any additional mounts may be specified in a dict in the format
+        { mount point: source folder or tarfile.TarFile }
+    """
+    MountPoint = Union[str, tarfile.TarFile]
+
+    def __init__(
+                    self,
+                    name,
+                    webroot: str,
+                    confdir: str=None,
+                    other_mounts: dict=None
+                ):
+            if confdir is None:
+                confdir = Config.default_nginx_config
+            network = self.get_network(name)
+            webroot_mount, webroot_archive = self.get_mount_for(
+                webroot, '/usr/share/nginx/html'
             )
-        with tarfile.open(conf_dir_archive) as cf:
-            self.container.put_archive(
-                os.path.join(root, 'etc', 'nginx'), cf.read()
+            confdir_mount, confdir_archive = self.get_mount_for(
+                confdir, '/etc/nginx'
             )
+            mounts = [webroot_mount, confdir_mount]
+            archives = [webroot_archive, confdir_archive]
+            for dest, src in other_mounts.items():
+                mnt, tarfile = self.get_mount_for(src, dest)
+                mounts.append(mnt)
+                archives.append(tarfile)
+            super().__init__(
+                image="nginx:latest",
+                auto_remove=True,
+                network=network.id,
+                ports={
+                    80:     80,
+                    443:    443
+                },
+                mounts=mounts
+            )
+            for arch in archives:
+                self.container.put_archive(arch)
 
-    @staticmethod
-    def check_vol_for_files(volume_name: str, files: Iterable[str]) -> str:
-        """Check volume for files, creating a tar archive of the missing ones.
-
-        Works by comparing the sha256 hashes of each file in the `files` param
-        to a list of the hashes of the files in the volume. If the volume
-        does not yet exist, all files are added to the archive.
-
-        type: volume_name:  str
-        type: files:        Iterable of strings
-        param: volume_name: The name of the docker volume.
-        param: files:       An iterable of filepaths to check for.
-        return: str:        The location of a tar archive with the missing
-                            files, for use with self.container.put_archive
-        """
-        with tarfile.open(os.path.join(
-                    root, "tmp", "%s.tar" % volume_name
-                ), 'w') as volume_files:
-            if volume_name in [
-                        v.name for v in Config.client.volumes.list()
-                    ]:
-                filehashes = [
-                    hash_of_file(f) for f in os.listdir(
-                        Config.client.api.inspect_volume(
-                            volume_name
-                        )['Mountpoint']
-                    )
-                ]
-                for f in files:
-                    if hash_of_file(f) not in filehashes:
-                        if isinstance(f, str):
-                            volume_files.add(f)
-                        elif isinstance(f, TextIOWrapper):
-                            volume_files.addfile(f)
-            else:
-                for f in files:
-                    if isinstance(f, str):
-                        volume_files.add(f)
-                    elif isinstance(f, TextIOWrapper):
-                        volume_files.addfile(f)
-        return os.path.join(
-            root,
-            "tmp",
-            "%s.tar" % volume_name
-        )
-
-
-class FolderCopiedToVolume_BasicNginXSite(SiteWithDockerVolumes_Mixin):
-    def __init__(self, name: str, webroot: str):
-        """A version with docker volumes, from a provded webroot folder.
-
-        "webroot" should be a string representing a filepath to a directory
-            containing the webroot to be recursively copied into the "webroot"
-            docker volume mounted to the resulting container.
-        """
-        webroot_volume_name = "%s_webroot_vol" % name
-        config_volume_name = "%s_configuration_vol" % name
-        webroot_files = self.check_vol_for_files(
-            volume_name=webroot_volume_name,
-            files=[
-                os.path.join(dp, f) for dp, dn, fn in os.walk(
-                    webroot
-                ) for f in fn
-            ]
-        )
-        conf_dir_files = self.check_vol_for_files(
-            volume_name=config_volume_name,
-            files=[
-                os.path.join(dp, f) for dp, dn, fn in os.walk(
-                    Config.default_nginx_config
-                ) for f in fn
-            ]
-        )
-        super(FolderCopiedToVolume_BasicNginXSite, self).__init__(
-            name, webroot_files, conf_dir_files
-        )
-
-
-class SpecifiedFilesCopiedToVolume_BasicNginXSite(SiteWithDockerVolumes_Mixin):
-    def __init__(self, name, *files):
-        """A version with individually passed files, mounted to a docker volume.
-
-        The files should be either strings or file-like objects, or a mixture.
-        """
-        webroot_volume_name = "%s_webroot_vol" % name
-        config_volume_name = "%s_configuration_vol" % name
-        webroot_files = self.check_vol_for_files(webroot_volume_name, files)
-        conf_dir_files = self.check_vol_for_files(
-            volume_name=config_volume_name,
-            files=[
-                os.path.join(dp, f) for dp, dn, fn in os.walk(
-                    Config.default_nginx_config
-                ) for f in fn
-            ]
-        )
-        super(SpecifiedFilesCopiedToVolume_BasicNginXSite, self).__init__(
-            name, webroot_files, conf_dir_files
-        )
+    def get_mount_for(
+                self, source: MountPoint, destination: str
+            ) -> Tuple[Mount, str]:
+        foldername = destination.replace('/', '_')
+        if isinstance(source, tarfile.TarFile):
+            mnt = Mount(
+                target=destination,
+                source=os.path.join(self.get_parent_dir(), foldername),
+                type='bind',
+                read_only=True
+            )
+            return mnt, source
+        if not isinstance(source, str) or not os.isdir(source):
+            raise TypeError(
+                "%s is not a folder to be copied or a tarfile." % source
+            )
+        with tarfile.open(os.path.join(root, 'tmp', foldername)) as tf:
+            for f in d

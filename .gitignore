@@ -2,3 +2,4 @@
 .pytest_cache/
 Quick_Deployments.egg-info/
 __pycache__/
+build/
