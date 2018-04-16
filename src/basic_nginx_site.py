@@ -59,7 +59,7 @@ class BasicNginXSite():
                 cont.stop()
         open_ports = [
             int(port) for port in
-                Config.port_scanner.scan()['nmap']['scan']['127.0.0.1']['tcp']
+            Config.port_scanner.scan()['scan']['127.0.0.1']['tcp']
         ]
         if 80 in open_ports or 443 in open_ports:
             raise RuntimeError(
