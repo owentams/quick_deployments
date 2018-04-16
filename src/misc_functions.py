@@ -7,14 +7,21 @@ from subprocess import run, PIPE
 from subprocess import CompletedProcess
 from os.path import isdir, dirname, realpath
 from os.path import join as getpath
-from os import access, listdir, removedirs, stat
+from os import access, listdir, removedirs, stat, walk
 from os import F_OK as file_exists
 from os import makedirs as mkdir
 from shutil import copytree, copy
 from docker.errors import APIError
 from hashlib import sha256
-from typing import Tuple
 from src.config import Config
+
+
+def list_recursively(f: str, *filepath) -> list:
+    return [
+        getpath(dp, f) for dp, dn, fn in walk(
+            getpath(f, *filepath)
+        ) for f in fn
+    ]
 
 
 def hash_of_str(val: str) -> str:
