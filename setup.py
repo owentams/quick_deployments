@@ -16,7 +16,7 @@ setup(
     author_email="scott@tams.tech",
     description="Quick deployment scripts for various web services.",
     packages=["src", "test"],
-    install_requires=["docker", 'requests', 'python-nmap'],
+    install_requires=["docker", 'requests', 'python-nmap', 'strict-hint'],
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
     license="GPLv3",

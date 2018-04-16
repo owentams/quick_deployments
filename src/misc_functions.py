@@ -10,13 +10,22 @@ from os.path import join as getpath
 from os import access, listdir, removedirs, stat, walk
 from os import F_OK as file_exists
 from os import makedirs as mkdir
+from os import sep as root
 from shutil import copytree, copy
 from docker.errors import APIError
 from hashlib import sha256
 from src.config import Config
+from strict_hint import strict
 
 
+@strict
 def list_recursively(f: str, *filepath) -> list:
+    """Get a list of all files in a folder and its subfolders.
+
+    :return: list: Absolute paths of all files in the folder.
+    """
+    if not isdir(getpath(f, *filepath)):
+        return [getpath(f, *filepath)]
     return [
         getpath(dp, f) for dp, dn, fn in walk(
             getpath(f, *filepath)
@@ -24,11 +33,13 @@ def list_recursively(f: str, *filepath) -> list:
     ]
 
 
+@strict
 def hash_of_str(val: str) -> str:
     """Get the sha256 hash of a string."""
     return sha256(val.encode('ascii')).hexdigest()
 
 
+@strict
 def perms(f: str, *filepath) -> int:
     """Get the permissions of a file as an octal number.
 
@@ -38,14 +49,18 @@ def perms(f: str, *filepath) -> int:
 
     :type filepath: tuple of strings to be passed to os.path.join
     """
+    if f != root and f[0] != '/':
+        raise ValueError("Path must be specified as a full path.")
     return stat(getpath(f, *filepath)).st_mode
 
 
+@strict
 def hash_of_file(f: str, *filepath) -> str:
     """Get the sha256 hash of a file read by read_absolute."""
     return hash_of_str(read_absolute(f, *filepath))
 
 
+@strict
 def read_relative(*fname: str) -> str:
     """Get the contents of a file in the current directory.
 
@@ -56,6 +71,7 @@ def read_relative(*fname: str) -> str:
         return file.read()
 
 
+@strict
 def read_absolute(f, *fname) -> str:
     """Get the contents of a file from an absolute path.
 
@@ -66,11 +82,13 @@ def read_absolute(f, *fname) -> str:
         return file.read()
 
 
+@strict
 def runcmd(cmd: str) -> CompletedProcess:
     """Alias subprocess.run, with check, shell, stdin and stdout enabled."""
     return run(cmd, check=True, shell=True, stdout=PIPE, stdin=PIPE)
 
 
+@strict
 def check_isdir(filepath: str, src: str = '') -> bool:
     """Check to make sure a particular filepath is a directory.
 
@@ -109,6 +127,7 @@ def check_isdir(filepath: str, src: str = '') -> bool:
     return False    # this should never be reached.
 
 
+@strict
 def check_for_image(tag: str, version: str) -> bool:
     """Check that an image is present by the tag/version strings."""
     all_tags = [
