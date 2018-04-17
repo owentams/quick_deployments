@@ -4,13 +4,15 @@ from os import sep as root
 import tarfile
 from shutil import copy
 from textwrap import dedent
-from typing import Iterable, Union, Tuple
+from typing import Union, Tuple, Dict
+from strict_hint import strict
 from docker.types import Mount
 from docker.models.networks import Network
 from docker.errors import APIError
-from _io import TextIOWrapper
 from src.config import Config
-from src.misc_functions import check_isdir, check_for_image, hash_of_file
+from src.misc_functions import check_isdir, check_for_image, list_recursively
+from src.misc_functions import hash_of_str
+MountPoint = Union[str, Dict[str, tarfile.TarFile]]
 
 
 class BasicNginXSite():
@@ -217,66 +219,86 @@ class CopyFilesToMountedWebroot_BasicNginxSite(BasicNginXSite):
 class CopyFoldersToMounts(BasicNginXSite):
     """Allows folders to be specified that hold various mounted directories.
 
-    webroot and confdir should both either be a tarfile.TarFile object (an open
-    tarfile) or a string defining a filepath to be copied. The contents of any
-    specified mount source will override what is in the container already, if
-    anything.
+    webroot and confdir should both either be a dict mapping a unique folder
+    name to a  tarfile.TarFile object (an open tarfile) or a string defining a
+    filepath to be copied. The contents of any specified mount source will
+    override what is in the container already, if anything.
 
     Any additional mounts may be specified in a dict in the format
         { mount point: source folder or tarfile.TarFile }
     """
-    MountPoint = Union[str, tarfile.TarFile]
+    OtherMount = Dict[str, Dict[str, str]]
 
     def __init__(
-                    self,
-                    name,
-                    webroot: str,
-                    confdir: str=None,
-                    other_mounts: dict=None
-                ):
-            if confdir is None:
-                confdir = Config.default_nginx_config
-            network = self.get_network(name)
-            webroot_mount, webroot_archive = self.get_mount_for(
-                webroot, '/usr/share/nginx/html'
-            )
-            confdir_mount, confdir_archive = self.get_mount_for(
-                confdir, '/etc/nginx'
-            )
-            mounts = [webroot_mount, confdir_mount]
-            archives = [webroot_archive, confdir_archive]
-            for dest, src in other_mounts.items():
-                mnt, tarfile = self.get_mount_for(src, dest)
-                mounts.append(mnt)
-                archives.append(tarfile)
-            super().__init__(
-                image="nginx:latest",
-                auto_remove=True,
-                network=network.id,
-                ports={
-                    80:     80,
-                    443:    443
-                },
-                mounts=mounts
-            )
-            for arch in archives:
-                self.container.put_archive(arch)
+                self,
+                name,
+                webroot: str,
+                confdir: Union[MountPoint, None]=None,
+                other_mounts: Union[List[OtherMount, ...], None]=None
+            ):
+        """Allows folders to be specified that hold various mounted directories.
 
+        webroot and confdir should both either be a tarfile.TarFile object (an
+        open tarfile) or a string defining a filepath to be copied. The
+        contents of any specified mount source will override what is in the
+        container already, if anything.
+
+        Any additional mounts may be specified in a dict in the format
+            [
+                mount point on host: {
+                    "destination": mount point in container,
+                    "incoming_data": filepath of folder to be copied
+                }
+            ]
+        """
+        if confdir is None:
+            confdir = Config.default_nginx_config
+        network = self.get_network(name)
+        webroot_mount, webroot_archive = self.get_mount_for(
+            webroot, '/usr/share/nginx/html'
+        )
+        confdir_mount, confdir_archive = self.get_mount_for(
+            confdir.keys()[0], '/etc/nginx',
+        )
+        mounts = [webroot_mount, confdir_mount]
+        archives = [webroot_archive, confdir_archive]
+        for dest, src in  other_mounts.keys(), other_mounts.values():
+            mnt, tarfile = self.get_mount_for(src.keys()[0], dest, src.)
+            mounts.append(mnt)
+            archives.append(tarfile)
+        super().__init__(
+            image="nginx:latest",
+            auto_remove=True,
+            network=network.id,
+            ports={
+                80:     80,
+                443:    443
+            },
+            mounts=mounts
+        )
+        for arch in archives:
+            self.container.put_archive(arch)
+
+    @strict
     def get_mount_for(
-                self, source: MountPoint, destination: str
+                self, source: str, destination: str, mount_point: str
             ) -> Tuple[Mount, str]:
-        foldername = destination.replace('/', '_')
-        if isinstance(source, tarfile.TarFile):
-            mnt = Mount(
-                target=destination,
-                source=os.path.join(self.get_parent_dir(), foldername),
-                type='bind',
-                read_only=True
-            )
-            return mnt, source
-        if not isinstance(source, str) or not os.isdir(source):
-            raise TypeError(
-                "%s is not a folder to be copied or a tarfile." % source
-            )
-        with tarfile.open(os.path.join(root, 'tmp', foldername)) as tf:
-            for f in d
+        """Return a mount and the location of a tarfile to put in that mount.
+
+        source should be the location of the source files
+        """
+
+        with tarfile.open(os.path.join(
+                    root, 'tmp', '%s.tar' % hash_of_str(mount_point)[:15]
+                ), 'w') as tf:
+            for f in list_recursively(source):
+                tf.add(f)
+        mnt = Mount(
+            target=destination,
+            source=mount_point,
+            type='bind',
+            read_only=True
+        )
+        return mnt, os.path.join(
+            root, 'tmp', '%s.tar' % hash_of_str(mount_point)[:15]
+        )
