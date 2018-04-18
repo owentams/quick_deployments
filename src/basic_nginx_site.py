@@ -305,19 +305,17 @@ class CopyFoldersToMounts(BasicNginXSite):
         destination should be the mount point inside the container
         mount_point should be the host mount point.
         """
+        tmpstore = os.path.join(
+            root, 'tmp', 'quick_deployments', 'tmpstore'
+        )
+        check_isdir(tmpstore)
         if isinstance(source, str):
             with tarfile.open(os.path.join(
-                        root,
-                        'tmp',
-                        'quick_deployments',
-                        '%s.tar' % hash_of_str(mount_point)[:15]
+                        tmpstore, '%s.tar' % hash_of_str(mount_point)[:15]
                     ), 'w') as tf:
                 for f in list_recursively(source):
                     tf.add(f)
         else:
-            tmpstore = os.path.join(
-                root, 'tmp', 'quick_deployments', 'tmpstore'
-            )
             os.makedirs(tmpstore)
             # Extract the received tarfile into a temporary storage.
             source.extractall(tmpstore)
