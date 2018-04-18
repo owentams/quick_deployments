@@ -125,3 +125,16 @@ def check_isdir(filepath: str, src: str = '') -> bool:
         copy(src, filepath)
         return True
     return False    # this should never be reached.
+
+
+@strict
+def get_parent_dir(name: str) -> str:
+    """Retrieve the parent directory of a named instance."""
+    return getpath(
+        root,
+        "usr",
+        "share",
+        "quick_deployments",
+        "static",
+        name
+    )
