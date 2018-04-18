@@ -23,8 +23,9 @@ class Config():
     )
     port_scanner = PortScanner()
 
+    @staticmethod
     @strict
-    def all_image_tags(self) -> List[str]:
+    def all_image_tags() -> List[str]:
         """Return a list of all available image tags."""
         tags = []
         for image in Config.client.images.list():
