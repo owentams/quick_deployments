@@ -11,9 +11,9 @@ from docker.models.images import Image
 from docker.models.networks import Network
 from docker.errors import APIError
 from src.config import Config
-from src.misc_functions import check_isdir, list_recursively
+from src.misc_functions import check_isdir, list_recursively, get_parent_dir
 from src.misc_functions import hash_of_str
-MountPoint = Union[str, Dict[str, tarfile.TarFile]]
+MountPoint = Dict[str, Union[str, tarfile.TarFile]]
 OtherMount = Dict[str, Dict[str, str]]
 
 
@@ -124,14 +124,7 @@ class BlankMounted_BasicNginXSite(BasicNginXSite):
     def __init__(self, name: str):
         """Init self."""
         network = self.get_network(name)
-        parent_dir = os.path.join(
-            root,
-            "usr",
-            "share",
-            "quick_deployments",
-            "static",
-            name
-        )
+        parent_dir = get_parent_dir(name)
         webroot_path = os.path.join(
             parent_dir,
             "webroot"
@@ -185,7 +178,7 @@ class CopyFilesToMountedWebroot_BasicNginxSite(BasicNginXSite):
     def __init__(self, name: str, *files):
         """init self"""
         network = self.get_network(name)
-        parent_dir = self.get_parent_dir(name)
+        parent_dir = get_parent_dir(name)
         webroot_path = os.path.join(parent_dir, "webroot")
         confdir_path = os.path.join(parent_dir, "configuration")
         check_isdir(webroot_path)
@@ -224,14 +217,12 @@ class CopyFilesToMountedWebroot_BasicNginxSite(BasicNginXSite):
 
 
 class CopyFoldersToMounts(BasicNginXSite):
-    """Allows folders to be specified that hold various mounted directories.
-    """
-
+    """Allow folders to be specified that hold various mounted directories."""
     def __init__(
                 self,
                 name,
-                webroot: str,
-                confdir: Union[MountPoint, None]=None,
+                webroot: MountPoint,
+                confdir: Optional[MountPoint]=None,
                 other_mounts: Optional[OtherMount]=None
             ):
         """Allows folders to be specified that hold various mounted directories.
