@@ -3,6 +3,8 @@ from docker import DockerClient
 from os import sep as root
 from os.path import join
 from nmap.nmap import PortScanner
+from typing import List
+
 
 class Config():
     """Configuration values. Static object."""
@@ -19,3 +21,12 @@ class Config():
         'configuration'
     )
     port_scanner = PortScanner()
+
+    @property
+    def all_image_tags(self) -> List[str]:
+        """Return a list of all available image tags."""
+        tags = []
+        for image in Config.client.images.list():
+            for tag in image.tags:
+                tags.append(tag)
+        return tags

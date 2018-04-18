@@ -7,10 +7,11 @@ from textwrap import dedent
 from typing import Union, Tuple, Dict, Optional
 from strict_hint import strict
 from docker.types import Mount
+from docker.models.images import Image
 from docker.models.networks import Network
 from docker.errors import APIError
 from src.config import Config
-from src.misc_functions import check_isdir, check_for_image, list_recursively
+from src.misc_functions import check_isdir, list_recursively
 from src.misc_functions import hash_of_str
 MountPoint = Union[str, Dict[str, tarfile.TarFile]]
 OtherMount = Dict[str, Dict[str, str]]
@@ -35,39 +36,16 @@ class BasicNginXSite():
         running __init__(self), as a list of docker.types.Mount objects as
         self.mounts.
         """
-        if "image" in kwargs.keys():
-            check_for_image(
-                tag=kwargs['image'].split(':', maxsplit=1)[0],
-                version=kwargs['image'].split(':', maxsplit=1)[1]
-            )
-        else:
+        try:
+            self.image = kwargs['image']
+        except AttributeError:
             raise ValueError(
                 "Image must be specified. Received kwargs: "
                 + str(kwargs.keys())
             )
-        if "name" in kwargs.keys():
-            for cont in Config.client.containers.list(
-                        all=True, filters={'name': kwargs['name']}
-                    ):
-                try:
-                    cont.stop()
-                except APIError:
-                    pass
-                cont.remove(v=False)
-        for cont in Config.client.containers.list():
-            portbindings = Config.client.api.inspect_container(
-                cont.id
-            )['HostConfig']['PortBindings'].keys()
-            if '80/tcp' in portbindings or '443/tcp' in portbindings:
-                cont.stop()
-        open_ports = [
-            int(port) for port in
-            Config.port_scanner.scan()['scan']['127.0.0.1']['tcp']
-        ]
-        if 80 in open_ports or 443 in open_ports:
-            raise RuntimeError(
-                "Ports are occupied by a non-docker application!"
-            )
+        self.check_for_existing_instance(kwargs['name'])
+        # I was going to check here for and raise errors if the needed ports
+        # were already bound, but the docker client does that adequately.
         try:
             self.mounts = kwargs['mounts']
         except KeyError:
@@ -77,6 +55,45 @@ class BasicNginXSite():
             )
         self.container = Config.client.containers.create(*args, **kwargs)
         self.state = Config.client.api.inspect_container(self.container.id)
+
+    @staticmethod
+    @strict
+    def check_for_existing_instance(name):
+        """Check for an existing named container and remove it."""
+        for cont in Config.client.containers.list(
+                    all=True, filters={'name': name}
+                ):
+            try:
+                cont.stop()
+            except APIError:
+                pass
+            cont.remove(v=False)
+
+    @property
+    @strict
+    def image(self) -> Image:
+        """Get self.image."""
+        return self.image
+
+    @image.setter
+    @strict
+    def image(self, combined_tag: str):
+        """Check for the presence of image_name:version in the local cache.
+
+        The image is either retrieved or pulled and stored in self.image.
+        """
+        try:
+            image_name, version = combined_tag.split(':', maxsplit=1)
+        except ValueError:
+            image_name = combined_tag
+            version = 'latest'
+            combined_tag = "%s:%s" % (image_name, version)
+        if combined_tag in Config.all_image_tags:
+            self.image = Config.client.images.get(combined_tag)
+        else:
+            self.image = Config.client.images.pull(
+                repository=image_name, tag=version
+            )
 
     @staticmethod
     @strict
@@ -118,7 +135,7 @@ class BlankMounted_BasicNginXSite(BasicNginXSite):
     /usr/share/quick_deployments/static/{name}/configuration
     """
     def __init__(self, name: str):
-        """init self"""
+        """Init self."""
         network = self.get_network(name)
         parent_dir = os.path.join(
             root,

@@ -125,18 +125,3 @@ def check_isdir(filepath: str, src: str = '') -> bool:
         copy(src, filepath)
         return True
     return False    # this should never be reached.
-
-
-@strict
-def check_for_image(tag: str, version: str) -> bool:
-    """Check that an image is present by the tag/version strings."""
-    all_tags = [
-        [tag for tag in image.tags] for image in Config.client.images.list()
-    ]
-    if "%s:%s" % (tag, version) in all_tags:
-        return True
-    try:
-        Config.client.images.pull("%s:%s" % (tag, version))
-    except APIError:
-        return False
-    return True

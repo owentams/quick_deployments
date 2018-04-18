@@ -20,6 +20,7 @@ class TestBasicNginXSite:
     @property
     @strict
     def instance_name(self) -> str:
+        """The name of this instance."""
         return "test_nginx_site"
 
     @property
@@ -31,6 +32,7 @@ class TestBasicNginXSite:
     @property
     @strict
     def errpage_path(self) -> str:
+        """The path to the default 50x error page."""
         return os.path.join(Config.default_nginx_webroot, '50x.html')
 
     @property
@@ -41,11 +43,9 @@ class TestBasicNginXSite:
                     net.name for net in Config.client.networks.list()
                 ]:
             # A network for this name exists, get it.
-            networks = [
-                net.id for net in Config.client.networks.list(
-                    names="%s_network" % self.instance_name
-                )
-            ]
+            networks = Config.client.networks.list(
+                names="%s_network" % self.instance_name
+            )
             assert len(networks) == 1, dedent("""
                 Apparently it's possible to have more than one network with the
                 same name. I did not know that."""
@@ -103,7 +103,7 @@ class TestBasicNginXSite:
 
     @staticmethod
     @strict
-    def inspect(container_id: int) -> dict:
+    def inspect(container_id: str) -> dict:
         """Inspect the given container."""
         return Config.client.api.inspect_container(container_id)
 
@@ -357,13 +357,13 @@ class TestCopyFoldersToMounts_3():
             webroot=Config.default_nginx_webroot,
             confdir=Config.default_nginx_config,
             other_mounts={
-                self.test_folder_1['host_mnt']: {
-                    "destination": self.test_folder_1['destination'],
-                    "incoming_data": self.test_folder_1['incoming_data']
+                self.folder_1['host_mnt']: {
+                    "destination": self.folder_1['destination'],
+                    "incoming_data": self.folder_1['incoming_data']
                 },
-                self.test_folder_2['host_mnt']: {
-                    "destination": self.test_folder_2['destination'],
-                    "incoming_data": self.test_folder_2['incoming_data']
+                self.folder_2['host_mnt']: {
+                    "destination": self.folder_2['destination'],
+                    "incoming_data": self.folder_2['incoming_data']
                 }
             }
         )
