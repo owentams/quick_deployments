@@ -9,31 +9,34 @@ from requests import get, ConnectionError
 from pytest import raises
 from src.config import Config
 from src.basic_nginx_site import BasicNginXSite, BlankMounted_BasicNginXSite
-from src.basic_nginx_site import FolderCopiedToVolume_BasicNginXSite
-from src.basic_nginx_site import CopyFilesToMountedWebroot_BasicNginxSite
-from src.basic_nginx_site import SpecifiedFilesCopiedToVolume_BasicNginXSite
+from src.basic_nginx_site import CopyFoldersToMounts
 from src.misc_functions import hash_of_file, perms, hash_of_str
 from shutil import rmtree
+from strict_hint import strict
 
 
 class TestBasicNginXSite:
     """Tests that apply to all of the variations on BasicNginXSite."""
+    @strict
     @property
     def instance_name(self) -> str:
         return "test_nginx_site"
 
+    @strict
     @property
     def index_path(self) -> str:
         """The path for the default index file."""
         return os.path.join(Config.default_nginx_webroot, 'index.html')
 
+    @strict
     @property
     def errpage_path(self) -> str:
         return os.path.join(Config.default_nginx_webroot, '50x.html')
 
+    @strict
     @property
     def container_network(self) -> Network:
-        """Aquire a test network based on the name passed."""
+        """Aquire a test network based on the name of this instance."""
         if "%s_network" % self.instance_name in [
                     net.name for net in Config.client.networks.list()
                 ]:
@@ -55,6 +58,7 @@ class TestBasicNginXSite:
             )
 
     @property
+    @strict
     def instance(self) -> BasicNginXSite:
         """Aquire a BasicNginXSite based on the name and other args passed."""
         return BasicNginXSite(
@@ -82,6 +86,7 @@ class TestBasicNginXSite:
             self.instance.container.remove()
 
     @staticmethod
+    @strict
     def check_file(
                 test_file: str,
                 original_file: str,
@@ -97,6 +102,7 @@ class TestBasicNginXSite:
         return True
 
     @staticmethod
+    @strict
     def inspect(container_id: int) -> dict:
         """Inspect the given container."""
         return Config.client.api.inspect_container(container_id)
@@ -145,9 +151,6 @@ class TestBasicNginXSite:
             # No cert, no HTTPS. Throws an error.
             get("https://localhost")
 
-
-class MountedNginXSite_Mixin(TestBasicNginXSite):
-    """Mixin for BasicNginXSite's that have vols mounted to a host dir."""
     def test_configuration_files(self):
         """Test that the configuration files are correct.
 
@@ -237,34 +240,146 @@ class MountedNginXSite_Mixin(TestBasicNginXSite):
         self.test_webroot_files()
         self.test_configuration_files()
 
+    def test_container_stays_running(self):
+        """Start the container then check for it in the list of running."""
+        self.instance.container.start()
+        assert self.instance.container.id in [
+            c.id for c in Config.client.containers.list()
+        ], "The instance was started but doesn't seem to be running."
 
-class TestBlankMounted(MountedNginXSite_Mixin, TestBasicNginXSite):
+
+class TestBlankMounted(TestBasicNginXSite):
     """Test the blank_mounted constructor for a BasicNginXSite."""
+    @strict
     @property
     def instance_name(self) -> str:
         return "test-blank_mounted"
+
     @property
+    @strict
     def instance(self) -> BasicNginXSite:
         """Aquire a test version of the object."""
         return BlankMounted_BasicNginXSite(name=self.instance_name)
 
 
-class TestCopyFilesToMountedWebroot(MountedNginXSite_Mixin):
-    """Tests for the copy_files_to_mounted_webroot classmethod."""
+class TestCopyFoldersToMounts_1():
+    """Tests for the CopyFoldersToMounts variant, version 1.
+
+    This is tests with only specifying the webroot.
+    """
+    @strict
     @property
     def instance_name(self) -> str:
-        return "test-files2mount"
+        return "test-files2mount_1-nginx"
+
+    @strict
     @property
-    def instance(self) -> BasicNginXSite:
-        return CopyFilesToMountedWebroot_BasicNginxSite(
-            "test-copy_files_to_mounted_webroot-nginx",
-            self.index_path,
-            self.errpage_path
+    def instance(self) -> CopyFoldersToMounts:
+        return CopyFoldersToMounts(
+            self.instance_name,
+            Config.default_nginx_webroot
         )
 
-    def teardown_method(self):
-        """Delete files created during test."""
-        try:
-            rmtree(os.path.join(root, 'tmp', 'test-webroot'))
-        except FileNotFoundError:
-            pass
+
+class TestCopyFoldersToMounts_2():
+    """Tests for the CopyFoldersToMounts variant, version 2.
+
+    This is tests with the webroot and the configuration directory specified.
+    """
+    @strict
+    @property
+    def instance_name(self) -> str:
+        return "test-files2mount_2-nginx"
+
+    @strict
+    @property
+    def instance(self) -> CopyFoldersToMounts:
+        return CopyFoldersToMounts(
+            self.instance_name,
+            Config.default_nginx_webroot,
+            Config.default_nginx_config
+        )
+
+
+class TestCopyFoldersToMounts_3():
+    """Tests for the CopyFoldersToMounts variant, version 3.
+
+    This is tests with the webroot, configuration directory, and an additional
+    test directory defined."""
+    @strict
+    @property
+    def instance_name(self) -> str:
+        return "test-files2mount-nginx"
+
+    @strict
+    @property
+    def folder_1(self) -> Dict[str, str]:
+        return {
+            'host_mnt': os.path.join(
+                root,
+                'usr',
+                'share',
+                'quick_deployments',
+                self.instance_name,
+                'test_dir_from_archive'
+            ),
+            'destination': os.path.join(root, 'tmp', 'test_folder_1'),
+            'incoming_data': os.path.join(
+                os.path.dirname(os.path.realpath(__file__)),
+                "test_archive.tar"
+            )
+        }
+
+    @strict
+    @property
+    def folder_2(self) -> Dict[str, str]:
+        return {
+            'host_mnt': os.path.join(
+                root,
+                'usr',
+                'share',
+                'quick_deployments',
+                self.instance_name,
+                'test_dir_from_folder'
+            ),
+            'destination': os.path.join(root, 'tmp', 'test_folder_2'),
+            'incoming_data': os.path.join(
+                os.path.dirname(os.path.realpath(__file__)),
+                "test_document_folder"
+            )
+        }
+
+    @strict
+    @property
+    def instance(self) -> CopyFoldersToMounts:
+        return CopyFoldersToMounts(
+            self.instance_name,
+            webroot=Config.default_nginx_webroot,
+            confdir=Config.default_nginx_config,
+            other_mounts=[
+                self.test_folder_1['host_mnt']: {
+                    "destination": self.test_folder_1['destination'],
+                    "incoming_data": self.test_folder_1['incoming_data']
+                },
+                self.test_folder_2['host_mnt']: {
+                    "destination": self.test_folder_2['destination']
+                    "incoming_data": self.test_folder_2['incoming_data']
+                }
+            ]
+        )
+
+    def test_folder_1(self):
+        """Test that the files are the same for the archive-copy version."""
+        self.instance.container.start()
+        assert self.instance.container.id in [
+            c.id for c in Config.client.containers.list()
+        ], "The instance was started but doesn't seem to be running."
+        # to get similar output to the `tar tf` command we can use `find`
+        assert runcmd(
+                "tar tf %s" % folder_1['incoming_data']
+            ) == self.instance.container.exec_run(
+                "find %s" % folder_1['destination']
+            ).output.decode()
+
+    def test_folder_2(self):
+        """Test that the files are the same for the folder-copy version."""
