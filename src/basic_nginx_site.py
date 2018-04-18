@@ -88,7 +88,7 @@ class BasicNginXSite():
             image_name = combined_tag
             version = 'latest'
             combined_tag = "%s:%s" % (image_name, version)
-        if combined_tag in Config.all_image_tags:
+        if combined_tag in Config.all_image_tags():
             self.image = Config.client.images.get(combined_tag)
         else:
             self.image = Config.client.images.pull(
