@@ -18,19 +18,23 @@ from strict_hint import strict
 class TestBasicNginXSite:
     """Tests that apply to all of the variations on BasicNginXSite."""
     @property
+    @strict
     def instance_name(self) -> str:
         return "test_nginx_site"
 
     @property
+    @strict
     def index_path(self) -> str:
         """The path for the default index file."""
         return os.path.join(Config.default_nginx_webroot, 'index.html')
 
     @property
+    @strict
     def errpage_path(self) -> str:
         return os.path.join(Config.default_nginx_webroot, '50x.html')
 
     @property
+    @strict
     def container_network(self) -> Network:
         """Aquire a test network based on the name of this instance."""
         if "%s_network" % self.instance_name in [
@@ -54,6 +58,7 @@ class TestBasicNginXSite:
             )
 
     @property
+    @strict
     def instance(self) -> BasicNginXSite:
         """Aquire a BasicNginXSite based on the name and other args passed."""
         return BasicNginXSite(
@@ -246,10 +251,12 @@ class TestBasicNginXSite:
 class TestBlankMounted(TestBasicNginXSite):
     """Test the blank_mounted constructor for a BasicNginXSite."""
     @property
+    @strict
     def instance_name(self) -> str:
         return "test-blank_mounted"
 
     @property
+    @strict
     def instance(self) -> BasicNginXSite:
         """Aquire a test version of the object."""
         return BlankMounted_BasicNginXSite(name=self.instance_name)
@@ -261,10 +268,12 @@ class TestCopyFoldersToMounts_1():
     This is tests with only specifying the webroot.
     """
     @property
+    @strict
     def instance_name(self) -> str:
         return "test-files2mount_1-nginx"
 
     @property
+    @strict
     def instance(self) -> CopyFoldersToMounts:
         return CopyFoldersToMounts(
             self.instance_name,
@@ -278,10 +287,12 @@ class TestCopyFoldersToMounts_2():
     This is tests with the webroot and the configuration directory specified.
     """
     @property
+    @strict
     def instance_name(self) -> str:
         return "test-files2mount_2-nginx"
 
     @property
+    @strict
     def instance(self) -> CopyFoldersToMounts:
         return CopyFoldersToMounts(
             self.instance_name,
@@ -296,10 +307,12 @@ class TestCopyFoldersToMounts_3():
     This is tests with the webroot, configuration directory, and an additional
     test directory defined."""
     @property
+    @strict
     def instance_name(self) -> str:
         return "test-files2mount-nginx"
 
     @property
+    @strict
     def folder_1(self) -> Dict[str, str]:
         return {
             'host_mnt': os.path.join(
@@ -318,6 +331,7 @@ class TestCopyFoldersToMounts_3():
         }
 
     @property
+    @strict
     def folder_2(self) -> Dict[str, str]:
         return {
             'host_mnt': os.path.join(
@@ -336,6 +350,7 @@ class TestCopyFoldersToMounts_3():
         }
 
     @property
+    @strict
     def instance(self) -> CopyFoldersToMounts:
         return CopyFoldersToMounts(
             self.instance_name,
