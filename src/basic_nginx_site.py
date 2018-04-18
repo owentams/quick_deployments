@@ -4,7 +4,7 @@ from os import sep as root
 import tarfile
 from shutil import copy
 from textwrap import dedent
-from typing import Union, Tuple, Dict, Iterable, Optional
+from typing import Union, Tuple, Dict, Optional
 from strict_hint import strict
 from docker.types import Mount
 from docker.models.networks import Network
@@ -226,7 +226,7 @@ class CopyFoldersToMounts(BasicNginXSite):
                 name,
                 webroot: str,
                 confdir: Union[MountPoint, None]=None,
-                other_mounts: Optional[OtherMount, ...]=None
+                other_mounts: Optional[OtherMount]=None
             ):
         """Allows folders to be specified that hold various mounted directories.
 
