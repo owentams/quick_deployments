@@ -1,16 +1,16 @@
 """Tests for the BasicNginXSite."""
 import os
-import tarfile
 from os import sep as root
 from docker.models.networks import Network
 from docker.errors import APIError
 from textwrap import dedent
 from requests import get, ConnectionError
 from pytest import raises
+from typing import Dict
 from src.config import Config
 from src.basic_nginx_site import BasicNginXSite, BlankMounted_BasicNginXSite
 from src.basic_nginx_site import CopyFoldersToMounts
-from src.misc_functions import hash_of_file, perms, hash_of_str
+from src.misc_functions import hash_of_file, perms, hash_of_str, runcmd
 from shutil import rmtree
 from strict_hint import strict
 
@@ -362,7 +362,7 @@ class TestCopyFoldersToMounts_3():
                     "incoming_data": self.test_folder_1['incoming_data']
                 },
                 self.test_folder_2['host_mnt']: {
-                    "destination": self.test_folder_2['destination']
+                    "destination": self.test_folder_2['destination'],
                     "incoming_data": self.test_folder_2['incoming_data']
                 }
             }
@@ -376,9 +376,9 @@ class TestCopyFoldersToMounts_3():
         ], "The instance was started but doesn't seem to be running."
         # to get similar output to the `tar tf` command we can use `find`
         assert runcmd(
-                "tar tf %s" % folder_1['incoming_data']
+                "tar tf %s" % self.folder_1['incoming_data']
             ) == self.instance.container.exec_run(
-                "find %s" % folder_1['destination']
+                "find %s" % self.folder_1['destination']
             ).output.decode()
 
     def test_folder_2(self):
@@ -388,7 +388,7 @@ class TestCopyFoldersToMounts_3():
             c.id for c in Config.client.containers.list()
         ], "The instance was started but doesn't seem to be running."
         assert runcmd(
-                "ls %s" % folder_2['incoming_data']
+                "ls %s" % self.folder_2['incoming_data']
             ) == self.instance.container.exec_run(
-                "ls %s" % folder_2['destination']
+                "ls %s" % self.folder_2['destination']
             )
