@@ -3,8 +3,7 @@
 All code in this file should be purely functional.
 """
 
-from subprocess import run, PIPE
-from subprocess import CompletedProcess
+from subprocess import run, PIPE, CompletedProcess
 from os.path import isdir, dirname, realpath
 from os.path import join as getpath
 from os import access, listdir, removedirs, stat, walk
@@ -25,6 +24,7 @@ def list_recursively(f: str, *filepath) -> list:
     :return: list: Absolute paths of all files in the folder.
     """
     if not isdir(getpath(f, *filepath)):
+        # If the specified file isn't a directory, just return that one file.
         return [getpath(f, *filepath)]
     return [
         getpath(dp, f) for dp, dn, fn in walk(
