@@ -78,6 +78,7 @@ class BasicNginXSite():
         self.container = Config.client.containers.create(*args, **kwargs)
         self.state = Config.client.api.inspect_container(self.container.id)
 
+    @strict
     @staticmethod
     def get_parent_dir(name: str) -> str:
         """Retrieve the parent directory of a named instance."""
@@ -90,6 +91,7 @@ class BasicNginXSite():
             name
         )
 
+    @strict
     @staticmethod
     def get_network(name: str) -> Network:
         """Retrieve the appropriate network for this named service."""
