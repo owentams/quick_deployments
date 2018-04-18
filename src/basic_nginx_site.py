@@ -226,7 +226,7 @@ class CopyFoldersToMounts(BasicNginXSite):
                 name,
                 webroot: str,
                 confdir: Union[MountPoint, None]=None,
-                other_mounts: Optional[Iterable[OtherMount, ...]]=None
+                other_mounts: Optional[OtherMount, ...]=None
             ):
         """Allows folders to be specified that hold various mounted directories.
 
@@ -237,12 +237,12 @@ class CopyFoldersToMounts(BasicNginXSite):
         container already, if anything.
 
         Any additional mounts may be specified in a dict in the format
-            Iterable(
+            (Dict){
                 mount point on host: {
                     "destination": mount point in container,
                     "incoming_data": filepath of folder to be copied
                 }
-            )
+            }
         """
         if len(webroot) > 1:
             raise ValueError(

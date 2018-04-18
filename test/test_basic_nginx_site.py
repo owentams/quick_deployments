@@ -356,7 +356,7 @@ class TestCopyFoldersToMounts_3():
             self.instance_name,
             webroot=Config.default_nginx_webroot,
             confdir=Config.default_nginx_config,
-            other_mounts=[
+            other_mounts={
                 self.test_folder_1['host_mnt']: {
                     "destination": self.test_folder_1['destination'],
                     "incoming_data": self.test_folder_1['incoming_data']
@@ -365,7 +365,7 @@ class TestCopyFoldersToMounts_3():
                     "destination": self.test_folder_2['destination']
                     "incoming_data": self.test_folder_2['incoming_data']
                 }
-            ]
+            }
         )
 
     def test_folder_1(self):
@@ -383,3 +383,12 @@ class TestCopyFoldersToMounts_3():
 
     def test_folder_2(self):
         """Test that the files are the same for the folder-copy version."""
+        self.instance.container.start()
+        assert self.instance.container.id in [
+            c.id for c in Config.client.containers.list()
+        ], "The instance was started but doesn't seem to be running."
+        assert runcmd(
+                "ls %s" % folder_2['incoming_data']
+            ) == self.instance.container.exec_run(
+                "ls %s" % folder_2['destination']
+            )
