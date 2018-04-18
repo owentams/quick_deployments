@@ -78,8 +78,8 @@ class BasicNginXSite():
         self.container = Config.client.containers.create(*args, **kwargs)
         self.state = Config.client.api.inspect_container(self.container.id)
 
-    @strict
     @staticmethod
+    @strict
     def get_parent_dir(name: str) -> str:
         """Retrieve the parent directory of a named instance."""
         return os.path.join(
@@ -91,8 +91,8 @@ class BasicNginXSite():
             name
         )
 
-    @strict
     @staticmethod
+    @strict
     def get_network(name: str) -> Network:
         """Retrieve the appropriate network for this named service."""
         if "%s_network" % name not in [
