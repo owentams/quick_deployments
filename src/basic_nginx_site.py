@@ -73,7 +73,7 @@ class BasicNginXSite():
     @strict
     def image(self) -> Image:
         """Get self.image."""
-        return self.image
+        return self._image
 
     @image.setter
     @strict
@@ -94,9 +94,9 @@ class BasicNginXSite():
             version = 'latest'
             image = "%s:%s" % (image_name, version)
         if image in Config.all_image_tags():
-            self.image = Config.client.images.get(image)
+            self._image = Config.client.images.get(image)
         else:
-            self.image = Config.client.images.pull(
+            self._image = Config.client.images.pull(
                 repository=image_name, tag=version
             )
 
