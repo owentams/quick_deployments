@@ -77,15 +77,19 @@ class BasicNginXSite():
 
     @image.setter
     @strict
-    def image(self, combined_tag: str):
+    def image(self, image: Union[str, Image]):
         """Check for the presence of image_name:version in the local cache.
 
         The image is either retrieved or pulled and stored in self.image.
         """
         try:
-            image_name, version = combined_tag.split(':', maxsplit=1)
+            image_name, version = image.split(':', maxsplit=1)
+        except AttributeError:
+            # type Image doesn't have a split() attribute.
+            image_name, version = image.tags[0].split(':', maxsplit=1)
         except ValueError:
-            image_name = combined_tag
+            # If just the image name is passed, set the version tag as 'latest'
+            image_name = image
             version = 'latest'
             combined_tag = "%s:%s" % (image_name, version)
         if combined_tag in Config.all_image_tags():
