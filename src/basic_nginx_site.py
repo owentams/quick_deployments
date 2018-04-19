@@ -86,14 +86,15 @@ class BasicNginXSite():
             image_name, version = image.split(':', maxsplit=1)
         except AttributeError:
             # type Image doesn't have a split() attribute.
-            image_name, version = image.tags[0].split(':', maxsplit=1)
+            image = image.tags[0]
+            image_name, version = image.split(':', maxsplit=1)
         except ValueError:
             # If just the image name is passed, set the version tag as 'latest'
             image_name = image
             version = 'latest'
-            combined_tag = "%s:%s" % (image_name, version)
-        if combined_tag in Config.all_image_tags():
-            self.image = Config.client.images.get(combined_tag)
+            image = "%s:%s" % (image_name, version)
+        if image in Config.all_image_tags():
+            self.image = Config.client.images.get(image)
         else:
             self.image = Config.client.images.pull(
                 repository=image_name, tag=version
