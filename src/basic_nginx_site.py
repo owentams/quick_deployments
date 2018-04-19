@@ -265,7 +265,9 @@ class CopyFoldersToMounts(BasicNginXSite):
             mount_point='/usr/share/nginx/html'
         )
         confdir_mount, confdir_archive = self.get_mount_for(
-            tuple(confdir.keys())[0], '/etc/nginx',
+            mount_point=tuple(confdir.keys())[0],
+            destination='/etc/nginx',
+            source=confdir
         )
         mounts = {
             webroot_mount: webroot_archive,
