@@ -264,7 +264,7 @@ class CopyFoldersToMounts(BasicNginXSite):
             mount_point='/usr/share/nginx/html'
         )
         confdir_mount, confdir_archive = self.get_mount_for(
-            confdir.keys()[0], '/etc/nginx',
+            tuple(confdir.keys())[0], '/etc/nginx',
         )
         mounts = {
             webroot_mount: webroot_archive,
@@ -291,7 +291,7 @@ class CopyFoldersToMounts(BasicNginXSite):
                 80:     80,
                 443:    443
             },
-            mounts=mounts.keys()
+            mounts=list(mounts.keys())
         )
         for mount_point, archive in mounts.items():
             self.container.put_archive(path=mount_point, data=archive)
