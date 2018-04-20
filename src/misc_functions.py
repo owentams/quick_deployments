@@ -11,9 +11,7 @@ from os import F_OK as file_exists
 from os import makedirs as mkdir
 from os import sep as root
 from shutil import copytree, copy
-from docker.errors import APIError
 from hashlib import sha256
-from src.config import Config
 from strict_hint import strict
 
 
