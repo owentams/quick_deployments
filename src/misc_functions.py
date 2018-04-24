@@ -70,7 +70,7 @@ def read_relative(*fname: str) -> str:
 
 
 @strict
-def read_absolute(f, *fname) -> str:
+def read_absolute(f: str, *fname: str) -> str:
     """Get the contents of a file from an absolute path.
 
     Path should be passed like with os.path.join:

@@ -112,3 +112,45 @@ class TestPerms():
             misc_functions.hash_of_str(593)
         with raises(TypeError):
             misc_functions.hash_of_str(['invalid', {'inputs': 5}], 987.6)
+
+
+class Test_ReadRelative:
+    """Tests for the read_relative function."""
+    def test_readfile(self):
+        """Get the contents of the test_string.txt file and verify it."""
+        assert misc_functions.read_relative(
+            "test_folder", "test_string.txt"
+        ) == test_string
+
+    def test_invalid_path(self):
+        """Test that giving a read...() function raises OSError."""
+        with raises(FileNotFoundError):
+            misc_functions.read_("bullshit", "path")
+        with raises(IsADirectoryError):
+            misc_functions.read_("test_document_folder")
+
+    def test_invalid_typed_input(self):
+        """Make sure that passing invalidly typed arguments raises an error."""
+        with raises(TypeError):
+            misc_functions.read_relative(75, ["invalid", "input"])
+
+
+class Test_ReadAbsolute:
+    """Tests for the read_absolute function."""
+    def test_readfile(self):
+        """Get the contents of the test_string.txt file and verify it."""
+        assert misc_functions.read_relative(
+            thisdir, "test_folder", "test_string.txt"
+        ) == test_string
+
+    def test_invalid_path(self):
+        """Test that giving a read...() function raises OSError."""
+        with raises(FileNotFoundError):
+            misc_functions.read_absolute("bullshit", "path")
+        with raises(IsADirectoryError):
+            misc_functions.read_absolute(thisdir, "test_document_folder")
+
+    def test_invalid_typed_input(self):
+        """Make sure that passing invalidly typed arguments raises an error."""
+        with raises(TypeError):
+            misc_functions.read_absolute(575.327, {"invalid": "input"})
