@@ -1,5 +1,9 @@
 from src import misc_functions
-from os.path import dirname, realpath, join
+from os.path import dirname, realpath, join, isdir
+from os import access, remove
+from os import R_OK as readable_file
+from os import W_OK as writable_file
+from os import X_OK as executable_file
 from os import sep as root
 from pytest import raises
 
@@ -68,7 +72,7 @@ class Test_HashOfString:
             misc_functions.hash_of_str(['invalid', {'inputs': 5}])
 
 
-class Test_HashOfFile():
+class Test_HashOfFile:
     """Test that the function hash_of_file works."""
     def test_hash_of_file(self):
         """Check for the hash of the test_string.txt file."""
@@ -84,7 +88,7 @@ class Test_HashOfFile():
             misc_functions.hash_of_str(['invalid', {'inputs': 5}], 987.6)
 
 
-class TestPerms():
+class TestPerms:
     """Test that the perms function returns the right values."""
     def test_regular_file(self):
         """Test the permissions of the plain text file."""
@@ -119,15 +123,15 @@ class Test_ReadRelative:
     def test_readfile(self):
         """Get the contents of the test_string.txt file and verify it."""
         assert misc_functions.read_relative(
-            "test_folder", "test_string.txt"
+            "test_document_folder", "test_string.txt"
         ) == test_string
 
     def test_invalid_path(self):
         """Test that giving a read...() function raises OSError."""
         with raises(FileNotFoundError):
-            misc_functions.read_("bullshit", "path")
+            misc_functions.read_relative("bullshit", "path")
         with raises(IsADirectoryError):
-            misc_functions.read_("test_document_folder")
+            misc_functions.read_relative("test_document_folder")
 
     def test_invalid_typed_input(self):
         """Make sure that passing invalidly typed arguments raises an error."""
@@ -140,7 +144,7 @@ class Test_ReadAbsolute:
     def test_readfile(self):
         """Get the contents of the test_string.txt file and verify it."""
         assert misc_functions.read_relative(
-            thisdir, "test_folder", "test_string.txt"
+            thisdir, "test_document_folder", "test_string.txt"
         ) == test_string
 
     def test_invalid_path(self):
@@ -154,3 +158,31 @@ class Test_ReadAbsolute:
         """Make sure that passing invalidly typed arguments raises an error."""
         with raises(TypeError):
             misc_functions.read_absolute(575.327, {"invalid": "input"})
+
+
+class Test_CheckIsdir:
+    """Tests for the check_isdir function."""
+    def test_existing(self):
+        """Test for a folder that exists."""
+        assert misc_functions.check_isdir(
+            join(thisdir, "test_document_folder")
+        )
+
+    def test_not_existing(self):
+        """Test for a folder that doesn't exist."""
+        assert misc_functions.check_isdir(
+            join(thisdir, "test_folder")
+        )
+        assert isdir(join(thisdir, "test_folder"))
+        assert access(
+            join(thisdir, "test_folder"),
+            readable_file | writable_file | executable_file
+        )
+        remove(join(thisdir, "test_folder"))
+
+    def test_with_source_file(self):
+        """Test that passing a single file as 'src' copies that file over.
+
+        This should create test_folder in the directory the file is in ($WD),
+        a folder which should not exist, and place
+        $WD/test_document_folder/test_string.txt inside that folder."""

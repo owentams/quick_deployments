@@ -87,7 +87,7 @@ def runcmd(cmd: str) -> CompletedProcess:
 
 
 @strict
-def check_isdir(filepath: str, src: str = '') -> bool:
+def check_isdir(filepath: str, src: str='') -> bool:
     """Check to make sure a particular filepath is a directory.
 
     Also check that it's not a file and create it if it doesn't already

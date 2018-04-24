@@ -259,6 +259,8 @@ class CopyFoldersToMounts(BasicNginXSite):
             )
         if confdir is None:
             the_confdir = Config.default_nginx_config
+        else:
+            the_confdir = confdir
         network = self.get_network(name)
         webroot_mount, webroot_archive = self.get_mount_for(
             source=tuple(webroot.values())[0],
