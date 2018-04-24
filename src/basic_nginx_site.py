@@ -155,6 +155,7 @@ class BlankMounted_BasicNginXSite(BasicNginXSite):
             read_only=True
         )
         super(BlankMounted_BasicNginXSite, self).__init__(
+            name=name,
             image="nginx:latest",
             auto_remove=True,
             network=network.id,
@@ -257,7 +258,7 @@ class CopyFoldersToMounts(BasicNginXSite):
                 % len(confdir)
             )
         if confdir is None:
-            confdir = Config.default_nginx_config
+            the_confdir = Config.default_nginx_config
         network = self.get_network(name)
         webroot_mount, webroot_archive = self.get_mount_for(
             source=tuple(webroot.values())[0],
@@ -267,7 +268,7 @@ class CopyFoldersToMounts(BasicNginXSite):
         confdir_mount, confdir_archive = self.get_mount_for(
             mount_point=tuple(confdir.keys())[0],
             destination='/etc/nginx',
-            source=confdir
+            source=the_confdir
         )
         mounts = {
             webroot_mount: webroot_archive,

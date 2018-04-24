@@ -66,7 +66,7 @@ class TestBasicNginXSite:
             image="nginx:latest",
             name=self.instance_name,
             auto_remove=True,
-            network=self.container_network,
+            network=self.container_network.id,
             ports={
                 80:     80,
                 443:    443
