@@ -2,6 +2,7 @@
 from os.path import join as getpath
 from os.path import dirname, realpath
 from setuptools import setup
+from git.repo.base import Repo
 
 
 def read(*fname: str) -> str:
@@ -9,9 +10,13 @@ def read(*fname: str) -> str:
     return open(getpath(dirname(realpath(__file__)), *fname)).read()
 
 
+vcs = Repo(dirname(realpath(__file__)))
+versionnum = len([c for c in vcs.iter_commits()])
+
+
 setup(
     name="Quick Deployments",
-    version="0.0.1",
+    version="0.0.%d" % versionnum,
     author="D. Scott Boggs",
     author_email="scott@tams.tech",
     description="Quick deployment scripts for various web services.",
