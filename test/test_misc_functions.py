@@ -273,3 +273,25 @@ class Test_CheckIsdir:
             misc_functions.check_isdir(join(
                 thisdir, "test_document_folder", "test_string.txt"
             ))
+
+class Test_GetParentDir:
+    """Tests for the get_parent_dir function."""
+    def test_valid_value(self):
+        """Test that passing a valid value retrieves the correct response."""
+        assert misc_functions.get_parent_dir("a_test_filename") == join(
+            root,
+            "usr",
+            "share",
+            "quick_deployments",
+            "static",
+            "a_test_filename"
+        )
+
+    def test_invalid_value(self):
+        """Check that passing an invalid value raises an error."""
+        with raises(TypeError):
+            misc_functions.get_parent_dir(9532)
+        with raises(TypeError):
+            misc_functions.get_parent_dir(['a', 'list'])
+        with raises(TypeError):
+            misc_functions.get_parent_dir("like", "os.path.join", "nope.")
