@@ -62,6 +62,9 @@ def hash_of_file(f: str, *filepath) -> str:
 def read_relative(*fname: str) -> str:
     """Get the contents of a file in the current directory.
 
+    NOTE: this means relative to the directory containing the misc_functions.py
+    file!!! That may not be the directory in which your source file lies!
+
     Path should be passed like with os.path.join:
     read_relative('path', 'to', 'file')
     """

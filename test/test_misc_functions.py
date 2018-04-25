@@ -126,8 +126,16 @@ class Test_ReadRelative:
     def test_readfile(self):
         """Get the contents of the test_string.txt file and verify it."""
         assert misc_functions.read_relative(
-            "test_document_folder", "test_string.txt"
+            # note that read_relative reads relative to the misc_functions
+            # folder
+            parent, "test", "test_document_folder", "test_string.txt"
         ) == test_string
+        with raises(FileNotFoundError):
+            misc_functions.read_relative(
+                # note that read_relative reads relative to the misc_functions
+                # folder
+                "test_document_folder", "test_string.txt"
+            )
 
     def test_invalid_path(self):
         """Test that giving a read...() function raises OSError."""
