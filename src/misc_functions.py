@@ -8,6 +8,7 @@ from os.path import isdir, dirname, realpath
 from os.path import join as getpath
 from os import access, listdir, removedirs, stat, walk
 from os import F_OK as file_exists
+from os import X_OK as executable_file
 from os import makedirs as mkdir
 from os import sep as root
 from shutil import copytree, copy
@@ -125,6 +126,20 @@ def check_isdir(filepath: str, src: str='') -> bool:
         # the src is just a single file, so copy it to the existing dir.
         copy(src, filepath)
         return True
+    if access(filepath, executable_file):
+        # the source hasn't ben specified and the directory already exists.
+        return True
+    print(
+        "False condition reached in check_isdir. Since check_isdir is self-",
+        "correcting, this should never happen. The conditions that led to"
+        "this scenario are as follows:",
+        "filepath argument:", filepath,
+        "src argument:", src,
+        "contents of each of the provided files:",
+        "\tfilepath:", listdir(filepath),
+        "\tsrc:", listdir(src) if src else "not specified.",
+        sep='\n'
+    )
     return False    # this should never be reached.
 
 

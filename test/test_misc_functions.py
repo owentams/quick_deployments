@@ -1,11 +1,19 @@
+"""Tests for the functions stored in misc_functions.py.
+
+Each class below stores the tests for one of the functions, named Test_%s where
+%s is the name of the function converted to CamelCase.
+"""
 from src import misc_functions
 from os.path import dirname, realpath, join, isdir
-from os import access, remove
+from os import access, remove, rmdir
 from os import R_OK as readable_file
 from os import W_OK as writable_file
 from os import X_OK as executable_file
+from os import F_OK as file_at_all
 from os import sep as root
-from pytest import raises
+from os import pardir as parent
+from pytest import raises, fixture
+from shutil import rmtree
 
 test_string = """The Zen of Python, by Tim Peters
 
@@ -30,9 +38,8 @@ If the implementation is easy to explain, it may be a good idea.
 Namespaces are one honking great idea -- let's do more of those!
 """
 test_string2 = """Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
 """
-thisdir = dirname(realpath(__file__))
+thisdir = '/home/scott/Documents/code/quick_deployments/test'
 
 
 class Test_ListRecursively:
@@ -142,7 +149,9 @@ class Test_ReadRelative:
         with raises(FileNotFoundError):
             misc_functions.read_relative("bullshit", "path")
         with raises(IsADirectoryError):
-            misc_functions.read_relative("test_document_folder")
+            misc_functions.read_relative(
+                parent, "test", "test_document_folder"
+            )
 
     def test_invalid_typed_input(self):
         """Make sure that passing invalidly typed arguments raises an error."""
@@ -213,7 +222,7 @@ class Test_CheckIsdir:
         a folder which should not exist, and place
         $WD/test_document_folder/test_string.txt inside that folder.
         """
-        assert not access(join(thisdir, "test_folder"))
+        assert not access(join(thisdir, "test_folder"), file_at_all)
         assert misc_functions.check_isdir(
             join(thisdir, "test_folder"),
             join(thisdir, "test_document_folder", "test_string.txt")
@@ -224,14 +233,14 @@ class Test_CheckIsdir:
             readable_file | writable_file
         )
 
-    def test_with_source_folder(arg):
+    def test_with_source_folder(self):
         """Test that passing a folder copies the contents to the folder.
-        
+
         This should create test_folder in the directory the file is in ($WD),
         a folder which should not exist, and recursively copy the contents of
         $WD/test_document_folder/test_string.txt inside that folder.
         """
-        assert not access(join(thisdir, "test_folder"))
+        assert not access(join(thisdir, "test_folder"), file_at_all)
         assert misc_functions.check_isdir(
             join(thisdir, "test_folder"),
             join(thisdir, "test_document_folder")
@@ -239,19 +248,17 @@ class Test_CheckIsdir:
         # folder should now exist, checks for the files within.
         assert misc_functions.list_recursively(
             join(thisdir, "test_folder")
-        ) == [ 
-            join(thisdir, 'test', 'test_document_folder', 'test_string.txt'),
+        ) == [
+            join(thisdir, 'test_folder', 'test_string.txt'),
             join(
                 thisdir,
-                'test',
-                'test_document_folder',
+                'test_folder',
                 'test_folder2',
                 'test_string2.txt'
             )
         ]
         assert misc_functions.hash_of_file(join(
             thisdir,
-            'test',
             'test_document_folder',
             'test_folder2',
             'test_string2.txt'
