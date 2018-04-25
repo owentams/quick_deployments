@@ -29,6 +29,9 @@ If the implementation is hard to explain, it's a bad idea.
 If the implementation is easy to explain, it may be a good idea.
 Namespaces are one honking great idea -- let's do more of those!
 """
+test_string2 = """Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+"""
 thisdir = dirname(realpath(__file__))
 
 
@@ -185,4 +188,50 @@ class Test_CheckIsdir:
 
         This should create test_folder in the directory the file is in ($WD),
         a folder which should not exist, and place
-        $WD/test_document_folder/test_string.txt inside that folder."""
+        $WD/test_document_folder/test_string.txt inside that folder.
+        """
+        assert not access(join(thisdir, "test_folder"))
+        assert misc_functions.check_isdir(
+            join(thisdir, "test_folder"),
+            join(thisdir, "test_document_folder", "test_string.txt")
+        )
+        assert isdir(join(thisdir, "test_folder"))
+        assert access(
+            join(thisdir, "test_document_folder", "test_string.txt"),
+            readable_file | writable_file
+        )
+
+    def test_with_source_folder(arg):
+        """Test that passing a folder copies the contents to the folder.
+        
+        This should create test_folder in the directory the file is in ($WD),
+        a folder which should not exist, and recursively copy the contents of
+        $WD/test_document_folder/test_string.txt inside that folder.
+        """
+        assert not access(join(thisdir, "test_folder"))
+        assert misc_functions.check_isdir(
+            join(thisdir, "test_folder"),
+            join(thisdir, "test_document_folder")
+        )
+        # folder should now exist, checks for the files within.
+        assert misc_functions.list_recursively(
+            join(thisdir, "test_folder")
+        ) == [ 
+            join(thisdir, 'test', 'test_document_folder', 'test_string.txt'),
+            join(
+                thisdir,
+                'test',
+                'test_document_folder',
+                'test_folder2',
+                'test_string2.txt'
+            )
+        ]
+        assert misc_functions.hash_of_file(join(
+            thisdir,
+            'test',
+            'test_document_folder',
+            'test_folder2',
+            'test_string2.txt'
+        )) == misc_functions.hash_of_str(test_string2)
+        # cleanup should be in a dedicated method
+
