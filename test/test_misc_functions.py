@@ -173,6 +173,22 @@ class Test_ReadAbsolute:
 
 class Test_CheckIsdir:
     """Tests for the check_isdir function."""
+    def setup_method(self):
+        """Delete the folder that gets created by tests."""
+        try:
+            rmtree(join(thisdir, "test_folder"))
+            rmdir(join(thisdir, "test_folder"))
+        except FileNotFoundError:
+            print(join(thisdir, "test_folder"), "not found.")
+
+    def teardown_method(self):
+        """Delete the folder that gets created by tests."""
+        try:
+            rmtree(join(thisdir, "test_folder"))
+            rmdir(join(thisdir, "test_folder"))
+        except FileNotFoundError:
+            print(join(thisdir, "test_folder"), "not found.")
+
     def test_existing(self):
         """Test for a folder that exists."""
         assert misc_functions.check_isdir(
@@ -189,7 +205,6 @@ class Test_CheckIsdir:
             join(thisdir, "test_folder"),
             readable_file | writable_file | executable_file
         )
-        remove(join(thisdir, "test_folder"))
 
     def test_with_source_file(self):
         """Test that passing a single file as 'src' copies that file over.
@@ -241,5 +256,13 @@ class Test_CheckIsdir:
             'test_folder2',
             'test_string2.txt'
         )) == misc_functions.hash_of_str(test_string2)
-        # cleanup should be in a dedicated method
 
+    def test_passing_a_file(self):
+        """The whole point of this is to check if a file is a directory.
+
+        This test checks to make sure that it actually is.
+        """
+        with raises(FileExistsError):
+            misc_functions.check_isdir(join(
+                thisdir, "test_document_folder", "test_string.txt"
+            ))
