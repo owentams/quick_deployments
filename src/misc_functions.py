@@ -16,7 +16,7 @@ from strict_hint import strict
 
 
 @strict
-def list_recursively(f: str, *filepath) -> list:
+def list_recursively(f: str, *filepath: str) -> list:
     """Get a list of all files in a folder and its subfolders.
 
     :return: list: Absolute paths of all files in the folder.
@@ -38,7 +38,7 @@ def hash_of_str(val: str) -> str:
 
 
 @strict
-def perms(f: str, *filepath) -> int:
+def perms(f: str, *filepath: str) -> int:
     """Get the permissions of a file as an octal number.
 
     The last three digits of the octal value are what you would put in for
@@ -53,7 +53,7 @@ def perms(f: str, *filepath) -> int:
 
 
 @strict
-def hash_of_file(f: str, *filepath) -> str:
+def hash_of_file(f: str, *filepath: str) -> str:
     """Get the sha256 hash of a file read by read_absolute."""
     return hash_of_str(read_absolute(f, *filepath))
 
