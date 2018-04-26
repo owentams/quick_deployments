@@ -12,7 +12,7 @@ from os import X_OK as executable_file
 from os import F_OK as file_at_all
 from os import sep as root
 from os import pardir as parent
-from subprocess import CompletedProcess
+from subprocess import CompletedProcess, CalledProcessError
 from pytest import raises
 from shutil import rmtree
 
@@ -275,29 +275,31 @@ class Test_CheckIsdir:
                 thisdir, "test_document_folder", "test_string.txt"
             ))
 
-class Test_GetParentDir:
-    """Tests for the get_parent_dir function."""
-    def test_valid_value(self):
-        """Test that passing a valid value retrieves the correct response."""
-        assert misc_functions.get_parent_dir("a_test_filename") == join(
-            root,
-            "usr",
-            "share",
-            "quick_deployments",
-            "static",
-            "a_test_filename"
-        )
-
-    def test_invalid_value(self):
-        """Check that passing an invalid value raises an error."""
-        with raises(TypeError):
-            misc_functions.get_parent_dir(9532)
-        with raises(TypeError):
-            misc_functions.get_parent_dir(['a', 'list'])
-        with raises(TypeError):
-            misc_functions.get_parent_dir("like", "os.path.join", "nope.")
 
 class Test_Runcmd:
     """Tests for the runcmd function."""
     def test_echo(self):
         """Some tests using `echo` as a command."""
+        assert isinstance(misc_functions.runcmd("echo"), CompletedProcess)
+        assert misc_functions.runcmd("echo").stdout == b'\n'
+        assert misc_functions.runcmd("echo").stderr == b''
+
+    def test_echo_value(self):
+        assert misc_functions.runcmd(
+            "echo test value"
+        ).stdout == b'test value\n'
+        assert misc_functions.runcmd("echo test value").stderr == b''
+
+    def test_stderr_redirect():
+        """Test that redirecting output to stderr works."""
+        assert misc_functions.runcmd(
+            "echo test val >&2"
+        ).stderr == b'test val\n'
+        assert misc_functions.runcmd("echo test val >&2").stdout == b''
+
+    def test_invalid_input(self):
+        """Test various invalid commands for a CalledProcessError."""
+        with raises(CalledProcessError):
+            misc_functions.runcmd("bullshit command")
+        with raises(CalledProcessError):
+            misc_functions.runcmd("cat valid command with invalid --arguments")
