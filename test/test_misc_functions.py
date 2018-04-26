@@ -12,7 +12,7 @@ from os import X_OK as executable_file
 from os import F_OK as file_at_all
 from os import sep as root
 from os import pardir as parent
-from subprocess import CompletedProcess
+from subprocess import CompletedProcess, CalledProcessError
 from pytest import raises
 from shutil import rmtree
 
@@ -290,13 +290,12 @@ class Test_Runcmd:
         ).stdout == b'test value\n'
         assert misc_functions.runcmd("echo test value").stderr == b''
 
-    def test_stderr_redirect(arg):
+    def test_stderr_redirect(self):
         """Test that redirecting output to stderr works."""
         assert misc_functions.runcmd(
             "echo test val >&2"
         ).stderr == b'test val\n'
         assert misc_functions.runcmd("echo test val >&2").stdout == b''
-
 
 class Test_GetParentDir:
     """Tests the thing that gets your parent directory string"""
