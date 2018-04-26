@@ -275,29 +275,43 @@ class Test_CheckIsdir:
                 thisdir, "test_document_folder", "test_string.txt"
             ))
 
-class Test_GetParentDir:
-    """Tests for the get_parent_dir function."""
-    def test_valid_value(self):
-        """Test that passing a valid value retrieves the correct response."""
-        assert misc_functions.get_parent_dir("a_test_filename") == join(
-            root,
-            "usr",
-            "share",
-            "quick_deployments",
-            "static",
-            "a_test_filename"
-        )
-
-    def test_invalid_value(self):
-        """Check that passing an invalid value raises an error."""
-        with raises(TypeError):
-            misc_functions.get_parent_dir(9532)
-        with raises(TypeError):
-            misc_functions.get_parent_dir(['a', 'list'])
-        with raises(TypeError):
-            misc_functions.get_parent_dir("like", "os.path.join", "nope.")
 
 class Test_Runcmd:
     """Tests for the runcmd function."""
     def test_echo(self):
         """Some tests using `echo` as a command."""
+        assert isinstance(misc_functions.runcmd("echo"), CompletedProcess)
+        assert misc_functions.runcmd("echo").stdout == b'\n'
+        assert misc_functions.runcmd("echo").stderr == b''
+
+    def test_echo_value(self):
+        assert misc_functions.runcmd(
+            "echo test value"
+        ).stdout == b'test value\n'
+        assert misc_functions.runcmd("echo test value").stderr == b''
+
+    def test_stderr_redirect(arg):
+        """Test that redirecting output to stderr works."""
+        assert misc_functions.runcmd(
+            "echo test val >&2"
+        ).stderr == b'test val\n'
+        assert misc_functions.runcmd("echo test val >&2").stdout == b''
+
+
+class Test_GetParentDir:
+    """Tests the thing that gets your parent directory string"""
+    def test_valid_input(self):
+        """Test that passing a valid value retrieves the correct response."""
+        assert isinstance(misc_functions.get_parent_dir("test"), str)
+        assert misc_functions.get_parent_dir(
+            "test"
+        ) == '/usr/share/quick_deployments/static/test'
+
+    def test_invalid_input(self):
+        """Tests for exceptions thrown when invalid things are input."""
+        with raises(TypeError):
+            misc_functions.get_parent_dir(1)
+        with raises(TypeError):
+            misc_functions.get_parent_dir("test", "value")
+        with raises(TypeError):
+            misc_functions.get_parent_dir(["test", "value"])
