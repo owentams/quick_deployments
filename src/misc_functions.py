@@ -8,17 +8,16 @@ from os.path import isdir, dirname, realpath
 from os.path import join as getpath
 from os import access, listdir, removedirs, stat, walk
 from os import F_OK as file_exists
+from os import X_OK as executable_file
 from os import makedirs as mkdir
 from os import sep as root
 from shutil import copytree, copy
-from docker.errors import APIError
 from hashlib import sha256
-from src.config import Config
 from strict_hint import strict
 
 
 @strict
-def list_recursively(f: str, *filepath) -> list:
+def list_recursively(f: str, *filepath: str) -> list:
     """Get a list of all files in a folder and its subfolders.
 
     :return: list: Absolute paths of all files in the folder.
@@ -40,7 +39,7 @@ def hash_of_str(val: str) -> str:
 
 
 @strict
-def perms(f: str, *filepath) -> int:
+def perms(f: str, *filepath: str) -> int:
     """Get the permissions of a file as an octal number.
 
     The last three digits of the octal value are what you would put in for
@@ -55,7 +54,7 @@ def perms(f: str, *filepath) -> int:
 
 
 @strict
-def hash_of_file(f: str, *filepath) -> str:
+def hash_of_file(f: str, *filepath: str) -> str:
     """Get the sha256 hash of a file read by read_absolute."""
     return hash_of_str(read_absolute(f, *filepath))
 
@@ -63,6 +62,9 @@ def hash_of_file(f: str, *filepath) -> str:
 @strict
 def read_relative(*fname: str) -> str:
     """Get the contents of a file in the current directory.
+
+    NOTE: this means relative to the directory containing the misc_functions.py
+    file!!! That may not be the directory in which your source file lies!
 
     Path should be passed like with os.path.join:
     read_relative('path', 'to', 'file')
@@ -72,7 +74,7 @@ def read_relative(*fname: str) -> str:
 
 
 @strict
-def read_absolute(f, *fname) -> str:
+def read_absolute(f: str, *fname: str) -> str:
     """Get the contents of a file from an absolute path.
 
     Path should be passed like with os.path.join:
@@ -85,11 +87,11 @@ def read_absolute(f, *fname) -> str:
 @strict
 def runcmd(cmd: str) -> CompletedProcess:
     """Alias subprocess.run, with check, shell, stdin and stdout enabled."""
-    return run(cmd, check=True, shell=True, stdout=PIPE, stdin=PIPE)
+    return run(cmd, check=True, shell=True, stdout=PIPE, stderr=PIPE)
 
 
 @strict
-def check_isdir(filepath: str, src: str = '') -> bool:
+def check_isdir(filepath: str, src: str='') -> bool:
     """Check to make sure a particular filepath is a directory.
 
     Also check that it's not a file and create it if it doesn't already
@@ -124,4 +126,31 @@ def check_isdir(filepath: str, src: str = '') -> bool:
         # the src is just a single file, so copy it to the existing dir.
         copy(src, filepath)
         return True
+    if access(filepath, executable_file):
+        # the source hasn't ben specified and the directory already exists.
+        return True
+    print(
+        "False condition reached in check_isdir. Since check_isdir is self-",
+        "correcting, this should never happen. The conditions that led to"
+        "this scenario are as follows:",
+        "filepath argument:", filepath,
+        "src argument:", src,
+        "contents of each of the provided files:",
+        "\tfilepath:", listdir(filepath),
+        "\tsrc:", listdir(src) if src else "not specified.",
+        sep='\n'
+    )
     return False    # this should never be reached.
+
+
+@strict
+def get_parent_dir(name: str) -> str:
+    """Retrieve the parent directory of a named instance."""
+    return getpath(
+        root,
+        "usr",
+        "share",
+        "quick_deployments",
+        "static",
+        name
+    )

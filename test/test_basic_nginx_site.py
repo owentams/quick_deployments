@@ -11,6 +11,7 @@ from src.config import Config
 from src.basic_nginx_site import BasicNginXSite, BlankMounted_BasicNginXSite
 from src.basic_nginx_site import CopyFoldersToMounts
 from src.misc_functions import hash_of_file, perms, hash_of_str, runcmd
+from src.misc_functions import get_parent_dir
 from shutil import rmtree
 from strict_hint import strict
 
@@ -65,7 +66,7 @@ class TestBasicNginXSite:
             image="nginx:latest",
             name=self.instance_name,
             auto_remove=True,
-            network=self.container_network,
+            network=self.container_network.id,
             ports={
                 80:     80,
                 443:    443
@@ -352,10 +353,20 @@ class TestCopyFoldersToMounts_3():
     @property
     @strict
     def instance(self) -> CopyFoldersToMounts:
+        """The instance for these tests."""
+        parent_dir = get_parent_dir(self.instance_name)
         return CopyFoldersToMounts(
             self.instance_name,
-            webroot=Config.default_nginx_webroot,
-            confdir=Config.default_nginx_config,
+            webroot={
+                os.path.join(
+                    parent_dir, "webroot"
+                ): Config.default_nginx_webroot
+            },
+            confdir={
+                os.path.join(
+                    parent_dir, "configuration"
+                ): Config.default_nginx_config
+            },
             other_mounts={
                 self.folder_1['host_mnt']: {
                     "destination": self.folder_1['destination'],

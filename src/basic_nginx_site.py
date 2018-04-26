@@ -11,9 +11,9 @@ from docker.models.images import Image
 from docker.models.networks import Network
 from docker.errors import APIError
 from src.config import Config
-from src.misc_functions import check_isdir, list_recursively
+from src.misc_functions import check_isdir, list_recursively, get_parent_dir
 from src.misc_functions import hash_of_str
-MountPoint = Union[str, Dict[str, tarfile.TarFile]]
+MountPoint = Dict[str, Union[str, tarfile.TarFile]]
 OtherMount = Dict[str, Dict[str, str]]
 
 
@@ -73,40 +73,32 @@ class BasicNginXSite():
     @strict
     def image(self) -> Image:
         """Get self.image."""
-        return self.image
+        return self._image
 
     @image.setter
     @strict
-    def image(self, combined_tag: str):
+    def image(self, image: Union[str, Image]):
         """Check for the presence of image_name:version in the local cache.
 
         The image is either retrieved or pulled and stored in self.image.
         """
         try:
-            image_name, version = combined_tag.split(':', maxsplit=1)
+            image_name, version = image.split(':', maxsplit=1)
+        except AttributeError:
+            # type Image doesn't have a split() attribute.
+            image = image.tags[0]
+            image_name, version = image.split(':', maxsplit=1)
         except ValueError:
-            image_name = combined_tag
+            # If just the image name is passed, set the version tag as 'latest'
+            image_name = image
             version = 'latest'
-            combined_tag = "%s:%s" % (image_name, version)
-        if combined_tag in Config.all_image_tags:
-            self.image = Config.client.images.get(combined_tag)
+            image = "%s:%s" % (image_name, version)
+        if image in Config.all_image_tags():
+            self._image = Config.client.images.get(image)
         else:
-            self.image = Config.client.images.pull(
+            self._image = Config.client.images.pull(
                 repository=image_name, tag=version
             )
-
-    @staticmethod
-    @strict
-    def get_parent_dir(name: str) -> str:
-        """Retrieve the parent directory of a named instance."""
-        return os.path.join(
-            root,
-            "usr",
-            "share",
-            "quick_deployments",
-            "static",
-            name
-        )
 
     @staticmethod
     @strict
@@ -137,14 +129,7 @@ class BlankMounted_BasicNginXSite(BasicNginXSite):
     def __init__(self, name: str):
         """Init self."""
         network = self.get_network(name)
-        parent_dir = os.path.join(
-            root,
-            "usr",
-            "share",
-            "quick_deployments",
-            "static",
-            name
-        )
+        parent_dir = get_parent_dir(name)
         webroot_path = os.path.join(
             parent_dir,
             "webroot"
@@ -170,6 +155,7 @@ class BlankMounted_BasicNginXSite(BasicNginXSite):
             read_only=True
         )
         super(BlankMounted_BasicNginXSite, self).__init__(
+            name=name,
             image="nginx:latest",
             auto_remove=True,
             network=network.id,
@@ -198,7 +184,7 @@ class CopyFilesToMountedWebroot_BasicNginxSite(BasicNginXSite):
     def __init__(self, name: str, *files):
         """init self"""
         network = self.get_network(name)
-        parent_dir = self.get_parent_dir(name)
+        parent_dir = get_parent_dir(name)
         webroot_path = os.path.join(parent_dir, "webroot")
         confdir_path = os.path.join(parent_dir, "configuration")
         check_isdir(webroot_path)
@@ -237,14 +223,12 @@ class CopyFilesToMountedWebroot_BasicNginxSite(BasicNginXSite):
 
 
 class CopyFoldersToMounts(BasicNginXSite):
-    """Allows folders to be specified that hold various mounted directories.
-    """
-
+    """Allow folders to be specified that hold various mounted directories."""
     def __init__(
                 self,
                 name,
-                webroot: str,
-                confdir: Union[MountPoint, None]=None,
+                webroot: MountPoint,
+                confdir: Optional[MountPoint]=None,
                 other_mounts: Optional[OtherMount]=None
             ):
         """Allows folders to be specified that hold various mounted directories.
@@ -274,15 +258,19 @@ class CopyFoldersToMounts(BasicNginXSite):
                 % len(confdir)
             )
         if confdir is None:
-            confdir = Config.default_nginx_config
+            the_confdir = Config.default_nginx_config
+        else:
+            the_confdir = confdir
         network = self.get_network(name)
         webroot_mount, webroot_archive = self.get_mount_for(
-            source=webroot.values()[0],
-            destination=webroot.keys()[0],
+            source=tuple(webroot.values())[0],
+            destination=tuple(webroot.keys())[0],
             mount_point='/usr/share/nginx/html'
         )
         confdir_mount, confdir_archive = self.get_mount_for(
-            confdir.keys()[0], '/etc/nginx',
+            mount_point=tuple(confdir.keys())[0],
+            destination='/etc/nginx',
+            source=the_confdir
         )
         mounts = {
             webroot_mount: webroot_archive,
@@ -309,7 +297,7 @@ class CopyFoldersToMounts(BasicNginXSite):
                 80:     80,
                 443:    443
             },
-            mounts=mounts.keys()
+            mounts=list(mounts.keys())
         )
         for mount_point, archive in mounts.items():
             self.container.put_archive(path=mount_point, data=archive)
@@ -327,19 +315,17 @@ class CopyFoldersToMounts(BasicNginXSite):
         destination should be the mount point inside the container
         mount_point should be the host mount point.
         """
+        tmpstore = os.path.join(
+            root, 'tmp', 'quick_deployments', 'tmpstore'
+        )
+        check_isdir(tmpstore)
         if isinstance(source, str):
             with tarfile.open(os.path.join(
-                        root,
-                        'tmp',
-                        'quick_deployments',
-                        '%s.tar' % hash_of_str(mount_point)[:15]
+                        tmpstore, '%s.tar' % hash_of_str(mount_point)[:15]
                     ), 'w') as tf:
                 for f in list_recursively(source):
                     tf.add(f)
         else:
-            tmpstore = os.path.join(
-                root, 'tmp', 'quick_deployments', 'tmpstore'
-            )
             os.makedirs(tmpstore)
             # Extract the received tarfile into a temporary storage.
             source.extractall(tmpstore)

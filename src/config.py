@@ -4,6 +4,7 @@ from os import sep as root
 from os.path import join
 from nmap.nmap import PortScanner
 from typing import List
+from strict_hint import strict
 
 
 class Config():
@@ -22,8 +23,9 @@ class Config():
     )
     port_scanner = PortScanner()
 
-    @property
-    def all_image_tags(self) -> List[str]:
+    @staticmethod
+    @strict
+    def all_image_tags() -> List[str]:
         """Return a list of all available image tags."""
         tags = []
         for image in Config.client.images.list():

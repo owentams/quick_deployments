@@ -3,3 +3,5 @@
 Quick_Deployments.egg-info/
 __pycache__/
 build/
+dist/
+.mypy_cache/
