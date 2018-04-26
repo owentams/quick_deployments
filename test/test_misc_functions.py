@@ -4,15 +4,16 @@ Each class below stores the tests for one of the functions, named Test_%s where
 %s is the name of the function converted to CamelCase.
 """
 from src import misc_functions
-from os.path import dirname, realpath, join, isdir
-from os import access, remove, rmdir
+from os.path import join, isdir
+from os import access, rmdir
 from os import R_OK as readable_file
 from os import W_OK as writable_file
 from os import X_OK as executable_file
 from os import F_OK as file_at_all
 from os import sep as root
 from os import pardir as parent
-from pytest import raises, fixture
+from subprocess import CompletedProcess
+from pytest import raises
 from shutil import rmtree
 
 test_string = """The Zen of Python, by Tim Peters
@@ -295,3 +296,8 @@ class Test_GetParentDir:
             misc_functions.get_parent_dir(['a', 'list'])
         with raises(TypeError):
             misc_functions.get_parent_dir("like", "os.path.join", "nope.")
+
+class Test_Runcmd:
+    """Tests for the runcmd function."""
+    def test_echo(self):
+        """Some tests using `echo` as a command."""

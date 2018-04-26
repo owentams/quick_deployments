@@ -87,7 +87,7 @@ def read_absolute(f: str, *fname: str) -> str:
 @strict
 def runcmd(cmd: str) -> CompletedProcess:
     """Alias subprocess.run, with check, shell, stdin and stdout enabled."""
-    return run(cmd, check=True, shell=True, stdout=PIPE, stdin=PIPE)
+    return run(cmd, check=True, shell=True, stdout=PIPE, stderr=PIPE)
 
 
 @strict
